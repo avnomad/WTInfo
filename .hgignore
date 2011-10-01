@@ -1,0 +1,5 @@
+syntax: regexp
+Debug/*
+ipch/*
+syntax: glob
+WTInfo.sdf
