@@ -1,80 +1,150 @@
 #include <iostream>
 using std::wcout;
 using std::wcin;
-using std::endl;
 using std::wcerr;
 using std::wclog;
+using std::endl;
 using std::left;
+using std::right;
+
+#include <iomanip>
+using std::setw;
+using std::setprecision;
+
+#include <sstream>
+using std::ostringstream;
+using std::istringstream;
+using std::stringstream;
+
+#include <string>
+using std::wstring;
+using std::getline;
+
+#include <memory>
+using std::unique_ptr;
 
 #include <windows.h>
 #define NOWTFUNCTIONS
 #include <WinTab.h>
 
 typedef UINT (WINAPI *WTInfo_Type)(UINT,UINT,LPVOID);
+const UINT WTInfoW_Ordinal = 1020u;
 WTInfo_Type WTInfoW = nullptr;
 
 
-std::wostream &operator << (std::wostream &wout,const AXIS &axis)
-{
-	wout << L"range: " << axis.axMin << L" - " << axis.axMax << endl;
-	wout << std::fixed << L"resolution: " << (axis.axResolution >> 16) + (axis.axResolution & 0xffff)/(float)0x10000;
-	switch(axis.axUnits)
-	{
-	case TU_NONE:
-		wout << L"no unit";
-		break;
-	case TU_INCHES:
-		wout << L" per inch";
-		break;
-	case TU_CENTIMETERS:
-		wout << L" per cm";
-		break;
-	case TU_CIRCLE:
-		wout << L" per circle";
-		break;
-	} // end switch
-	wout << endl;
-	return wout;
-} // end function operator <<
-
 int main()
 {
-	AXIS x,y,z,npressure,tpressure,rotation[3],orientation[3];
-	UINT name_size,temp;
-	wchar_t *name;
-	UINT devices, extentions, managers, report_rate,cursor_types;
+	HMODULE wintabModule;
+	UINT block_size;
+	Indent indent(0);
+	unique_ptr<char[]> block;
+	
+	// configure debug parameters
+	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF|_CRTDBG_CHECK_ALWAYS_DF|/*_CRTDBG_CHECK_CRT_DF|*/_CRTDBG_LEAK_CHECK_DF);
+	_CrtSetReportMode(_CRT_WARN,_CRTDBG_MODE_DEBUG/*|_CRTDBG_MODE_WNDW*/);
+	_CrtSetReportMode(_CRT_ERROR,_CRTDBG_MODE_DEBUG/*|_CRTDBG_MODE_WNDW*/);
+	_CrtSetReportMode(_CRT_ASSERT,_CRTDBG_MODE_DEBUG/*|_CRTDBG_MODE_WNDW*/);
 
-	HMODULE WinTabHandle = LoadLibraryW(L"WinTab32.dll");
-	WTInfoW = (WTInfo_Type)GetProcAddress(WinTabHandle,(LPSTR)1020);
+	// load WinTab
+	if(wintabModule = LoadLibraryW(L"WinTab32.dll"))
+		wcout << L"Module loaded succesfully.\n";
+	else
+		wcout << Error(L"Could not load module: ") << endl;
 
-	wcout << L"Largest category size in bytes: " << WTInfoW(0,0,nullptr) << endl;
-	name_size = WTInfoW(WTI_DEVICES,DVC_NAME,nullptr);
-	name = (wchar_t*)new char[name_size];
-	WTInfoW(WTI_DEVICES,DVC_NAME,name);
-	wcout << L"Device name: " << name << endl;
-	delete[] name;
-	WTInfoW(WTI_DEVICES,DVC_X,&x);
-	WTInfoW(WTI_DEVICES,DVC_Y,&y);
-	WTInfoW(WTI_DEVICES,DVC_Z,&z);
-	WTInfoW(WTI_DEVICES,DVC_NPRESSURE,&npressure);
-	WTInfoW(WTI_DEVICES,DVC_TPRESSURE,&tpressure);
-	WTInfoW(WTI_DEVICES,DVC_ORIENTATION,&orientation);
-	temp = WTInfoW(WTI_DEVICES,DVC_ROTATION,&rotation);
-	wcout << x << y << z << npressure << tpressure
-		<< orientation[0] << orientation[1] << orientation[2]
-		<< rotation[0] << rotation[1] << rotation[2];
-	WTInfoW(WTI_INTERFACE,IFC_NDEVICES,&devices);
-	wcout << L"number of devices: " << devices << endl;
-	WTInfoW(WTI_INTERFACE,IFC_NEXTENSIONS,&extentions);
-	wcout << L"number of extentions: " << extentions << endl;
-	WTInfoW(WTI_INTERFACE,IFC_NMANAGERS,&managers);
-	wcout << L"number of managers: " << managers << endl;
-	WTInfoW(WTI_DEVICES,DVC_PKTRATE,&report_rate);
-	wcout << L"report rate: " << report_rate << L"Hz" << endl;
-	WTInfoW(WTI_DEVICES,DVC_NCSRTYPES,&cursor_types);
-	wcout << L"cursor types: " << cursor_types << endl;
+	// Get WTInfo address
+	if(WTInfoW = (WTInfo_Type)GetProcAddress(wintabModule,(LPSTR)(WTInfoW_Ordinal)))
+		wcout << L"Acquired WTInfoW address.\n";
+	else
+		wcout << Error(L"Could not acquire WTInfoW address: ");
 
-	FreeLibrary(WinTabHandle);
+	wcout << L"\n\n";
+
+	// largest category size
+	if((block_size = WTInfoW(0,0,nullptr)) != 0)
+		wcout << L"Size of largest category: " << block_size << L"B\n";
+	else
+		wcout << L"There is no data available from WTInfoW" << endl;
+
+	wcout << L"\n";
+
+	// individual category sizes
+	UINT nDevices,nCursors,nContexts,nExtensions,nManagers;
+	WTInfoW(WTI_INTERFACE,IFC_NDEVICES,&nDevices);
+	WTInfoW(WTI_INTERFACE,IFC_NCURSORS,&nCursors);
+	WTInfoW(WTI_INTERFACE,IFC_NCONTEXTS,&nContexts);
+	WTInfoW(WTI_INTERFACE,IFC_NEXTENSIONS,&nExtensions);
+	WTInfoW(WTI_INTERFACE,IFC_NMANAGERS,&nManagers);
+	UINT w1=18,w2=10;
+	wcout << indent << left << setw(w1) << L"Category" << right << setw(w2) << L"Size(Bytes)" << L"\n\n";
+	wcout << indent << left << setw(w1) << L"WTI_INTERFACE" << right << setw(w2) << WTInfoW(WTI_INTERFACE,0,nullptr) << L"B\n";
+	wcout << indent << left << setw(w1) << L"WTI_STATUS" << right << setw(w2) << WTInfoW(WTI_STATUS,0,nullptr) << L"B\n";
+	wcout << indent << left << setw(w1) << L"WTI_DEFCONTEXT" << right << setw(w2) << WTInfoW(WTI_DEFCONTEXT,0,nullptr) << L"B\n";
+	wcout << indent << left << setw(w1) << L"WTI_DEFSYSCTX" << right << setw(w2) << WTInfoW(WTI_DEFSYSCTX,0,nullptr) << L"B\n";
+	UINT cw1=9,cw2=3,cw3=2;
+	wcout << indent << left << setw(w1) << L"WTI_DEVICES:" << L"\n";
+	++indent;
+	for(UINT c = 0 ; c < nDevices ; ++c)
+		wcout << indent << left << setw(cw1) << L"device" << right << setw(cw2) << c << Indent(cw3) << setw(w2) << WTInfoW(WTI_DEVICES+c,0,nullptr) << L"B\n";
+	--indent;
+	wcout << indent << left << setw(w1) << L"WTI_CURSORS:" << L"\n";
+	++indent;
+	for(UINT c = 0 ; c < nCursors ; ++c)
+		wcout << indent << left << setw(cw1) << L"cursor" << right << setw(cw2) << c << Indent(cw3) << setw(w2) << WTInfoW(WTI_CURSORS+c,0,nullptr) << L"B\n";
+	--indent;
+	wcout << indent << left << setw(w1) << L"WTI_EXTENSIONS:" << L"\n";
+	++indent;
+	for(UINT c = 0 ; c < nExtensions ; ++c)
+		wcout << indent << left << setw(cw1) << L"extension" << right << setw(cw2) << c << Indent(cw3) << setw(w2) << WTInfoW(WTI_EXTENSIONS+c,0,nullptr) << L"B\n";
+	--indent;
+	wcout << indent << left << setw(w1) << L"WTI_DDCTXS:" << L"\n";
+	++indent;
+	for(UINT c = 0 ; c < nDevices ; ++c)
+		wcout << indent << left << setw(cw1) << L"device" << right << setw(cw2) << c << Indent(cw3) << setw(w2) << WTInfoW(WTI_DDCTXS+c,0,nullptr) << L"B\n";
+	--indent;
+	wcout << indent << left << setw(w1) << L"WTI_DSCTXS:" << L"\n";
+	++indent;
+	for(UINT c = 0 ; c < nDevices ; ++c)
+		wcout << indent << left << setw(cw1) << L"device" << right << setw(cw2) << c << Indent(cw3) << setw(w2) << WTInfoW(WTI_DSCTXS+c,0,nullptr) << L"B\n";
+	--indent;
+
+	wcout << L"\n\n\n\n";
+
+	// actual information
+	UINT c1 = 65;
+	cw1=15,cw2=40,cw3=6;
+	wcout << indent << left << setw(c1) << L"Category/Index" << L"Description" << L"\n\n";
+	wcout << indent << left << setw(c1) << L"WTI_INTERFACE" << L"Contains global interface identification and capability information." << L"\n";
+	++indent;
+	wcout << indent << left << setw(cw1) << L"Index" << right << setw(cw2) << L"Value" << Indent(cw3) << L"Description" << L"\n\n";
+	block_size = WTInfoW(WTI_INTERFACE,IFC_WINTABID,nullptr);
+	block = unique_ptr<char[]>(new char[block_size]);
+	WTInfoW(WTI_INTERFACE,IFC_WINTABID,block.get());
+	wcout << indent << left << setw(cw1) << L"IFC_WINTABID" << right << setw(cw2) << (wchar_t*)block.get() << Indent(cw3) << L"Returns a copy of the null-terminated tablet hardware identifica­tion string in the user buffer. This string should include make, model, and revi­sion information in user-readable format." << L"\n";
+	wcout << indent << left << setw(cw1) << L"IFC_NDEVICES" << right << setw(cw2) << nDevices << Indent(cw3) << L"Returns the number of devices supported." << L"\n";
+	wcout << indent << left << setw(cw1) << L"IFC_NCURSORS" << right << setw(cw2) << nCursors << Indent(cw3) << L"Returns the total number of cursor types supported." << L"\n";
+	wcout << indent << left << setw(cw1) << L"IFC_NCONTEXTS" << right << setw(cw2) << nContexts << Indent(cw3) << L"Returns the number of contexts supported." << L"\n";
+	wcout << indent << left << setw(cw1) << L"IFC_NEXTENSIONS" << right << setw(cw2) << nExtensions << Indent(cw3) << L"Returns the number of extension data items supported." << L"\n";
+	wcout << indent << left << setw(cw1) << L"IFC_NMANAGERS" << right << setw(cw2) << nManagers << Indent(cw3) << L"Returns the number of manager handles supported." << L"\n";
+	--indent;
+	wcout << indent << left << setw(c1) << L"WTI_STATUS" << L"Contains current interface resource usage statistics." << L"\n";
+	wcout << indent << left << setw(c1) << L"WTI_DEFCONTEXT" << L"Contains the current default digitizing logical context." << L"\n";
+	wcout << indent << left << setw(c1) << L"WTI_DEFSYSCTX" << L"Contains the current default system logical context." << L"\n";
+	wcout << indent << left << setw(c1) << L"WTI_DEVICES" << L"Each contains capability and status information for a device." << L"\n";
+	wcout << indent << left << setw(c1) << L"WTI_CURSORS" << L"Each contains capability and status information for a cursor type." << L"\n";
+	wcout << indent << left << setw(c1) << L"WTI_EXTENSIONS" << L"Each contains descriptive information and defaults for an extension." << L"\n";
+	wcout << indent << left << setw(c1) << L"WTI_DDCTXS" << L"Each contains the current default digitizing logical context for the corre­sponding device." << L"\n";
+	wcout << indent << left << setw(c1) << L"WTI_DSCTXS" << L"Each contains the current default system logical context for the correspond­ing device." << L"\n";
+
+	wcout << L"\n\n\n";
+
+	// unload WinTab
+	if(FreeLibrary(wintabModule))
+		wcout << L"Module unloaded succesfully.\n";
+	else
+		wcout << Error(L"Could not unload module: ") << endl;
+
+	wcout << L"\n";
+
 	system("pause");
 	return 0;
 } // end function main
