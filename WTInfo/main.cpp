@@ -80,8 +80,11 @@ int main()
 	wcout << L"\n";
 
 	// individual category sizes
-	UINT nDevices,nCursors,nContexts,nExtensions,nManagers,options,save_size;
+	UINT nDevices,nCursors,nContexts,nExtensions,nManagers,options,save_size,curContexts,curSysContexts,curPktRate,curManagers;
 	WORD specVersion,implVersion;
+	DWORD buttonUse,sysBtnUse;
+	WTPKT dataMask;
+	BOOL globSysPointing;
 	WTInfoW(WTI_INTERFACE,IFC_NDEVICES,&nDevices);
 	WTInfoW(WTI_INTERFACE,IFC_NCURSORS,&nCursors);
 	WTInfoW(WTI_INTERFACE,IFC_NCONTEXTS,&nContexts);
@@ -90,6 +93,13 @@ int main()
 	WTInfoW(WTI_INTERFACE,IFC_SPECVERSION,&specVersion);
 	WTInfoW(WTI_INTERFACE,IFC_IMPLVERSION,&implVersion);
 	WTInfoW(WTI_INTERFACE,IFC_CTXSAVESIZE,&save_size);
+	WTInfoW(WTI_STATUS,STA_CONTEXTS,&curContexts);
+	WTInfoW(WTI_STATUS,STA_SYSCTXS,&curSysContexts);
+	WTInfoW(WTI_STATUS,STA_PKTRATE,&curPktRate);
+	WTInfoW(WTI_STATUS,STA_MANAGERS,&curManagers);
+	WTInfoW(WTI_STATUS,STA_SYSTEM,&globSysPointing);
+	WTInfoW(WTI_STATUS,STA_BUTTONUSE,&buttonUse);
+	WTInfoW(WTI_STATUS,STA_SYSBTNUSE,&sysBtnUse);
 	UINT w1=18,w2=10;
 	wcout << indent << left << setw(w1) << L"Category" << right << setw(w2) << L"Size(Bytes)" << L"\n\n";
 	wcout << indent << left << setw(w1) << L"WTI_INTERFACE" << right << setw(w2) << WTInfoW(WTI_INTERFACE,0,nullptr) << L"B\n";
@@ -150,6 +160,19 @@ int main()
 	wcout << indent << left << setw(cw1) << L"IFC_NMANAGERS" << right << setw(cw2) << nManagers << Indent(cw3) << L"Returns the number of manager handles supported." << L"\n";
 	--indent;
 	wcout << indent << left << setw(c1) << L"WTI_STATUS" << L"Contains current interface resource usage statistics." << L"\n";
+	++indent;
+	wcout << indent << left << setw(cw1) << L"Index" << right << setw(cw2) << L"Value" << Indent(cw3) << L"Description" << L"\n\n";
+	wcout << indent << left << setw(cw1) << L"STA_CONTEXTS" << right << setw(cw2) << curContexts << Indent(cw3) << L"Returns the number of contexts currently open." << L"\n";
+	wcout << indent << left << setw(cw1) << L"STA_SYSCTXS" << right << setw(cw2) << curSysContexts << Indent(cw3) << L"Returns the number of system contexts currently open." << L"\n";
+	wcout << indent << left << setw(cw1) << L"STA_PKTRATE" << right << setw(cw2) << curPktRate << Indent(cw3) << L"Returns the maximum packet report rate currently being re­ceived by any context, in Hertz." << L"\n";
+	WTInfoW(WTI_STATUS,STA_PKTDATA,&dataMask);
+	wcout << indent << left << setw(cw1) << L"STA_PKTDATA" << right << setw(cw2) << toBinary(dataMask) << Indent(cw3) << L"Returns a mask indicating which packet data items are re­quested by at least one context." << L"\n";
+	wcout << WTDataMask(dataMask,27,25,7,6,specVersion);
+	wcout << indent << left << setw(cw1) << L"STA_MANAGERS" << right << setw(cw2) << curManagers << Indent(cw3) << L"Returns the number of manager handles currently open." << L"\n";
+	wcout << indent << left << setw(cw1) << L"STA_SYSTEM" << right << setw(cw2) << globSysPointing << Indent(cw3) << L"Returns a non-zero value if system pointing is available to the whole screen; zero otherwise." << L"\n";
+	wcout << indent << left << setw(cw1) << L"STA_BUTTONUSE" << right << setw(cw2) << toBinary(buttonUse) << Indent(cw3) << L"Returns a button mask indicating the logical buttons whose events are requested by at least one context." << L"\n";
+	wcout << indent << left << setw(cw1) << L"STA_SYSBTNUSE" << right << setw(cw2) << toBinary(sysBtnUse) << Indent(cw3) << L"Returns a button mask indicating which logical buttons are as­signed a system button function by the current cursor's system button map." << L"\n";
+	--indent;
 	wcout << indent << left << setw(c1) << L"WTI_DEFCONTEXT" << L"Contains the current default digitizing logical context." << L"\n";
 	wcout << indent << left << setw(c1) << L"WTI_DEFSYSCTX" << L"Contains the current default system logical context." << L"\n";
 	wcout << indent << left << setw(c1) << L"WTI_DEVICES" << L"Each contains capability and status information for a device." << L"\n";

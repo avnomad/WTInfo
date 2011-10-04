@@ -65,19 +65,6 @@ std::wostream &operator<<(std::wostream &wout, const WTVersion &version)
 	return wout;
 } // end function operator<<
 
-struct WTCOptions
-{
-	WTCOptions(UINT options,Indent indentation,UINT cw1,UINT cw2,UINT cw3)
-		:o(options),indent(indentation),w1(cw1),w2(cw2),w3(cw3){}
-
-	UINT o;
-	Indent indent;
-	UINT w1;
-	UINT w2;
-	UINT w3;
-}; // end struct WTCOptions
-
-
 wstring toBinary(UINT number)
 {
 	wstring s;
@@ -91,6 +78,18 @@ wstring toBinary(UINT number)
 	} // end for
 	return s;
 } // end function toBinary
+
+struct WTCOptions
+{
+	WTCOptions(UINT options,Indent indentation,UINT cw1,UINT cw2,UINT cw3)
+		:o(options),indent(indentation),w1(cw1),w2(cw2),w3(cw3){}
+
+	UINT o;
+	Indent indent;
+	UINT w1;
+	UINT w2;
+	UINT w3;
+}; // end struct WTCOptions
 
 std::wostream &operator<<(std::wostream &wout, const WTCOptions &options)
 {
@@ -109,3 +108,53 @@ std::wostream &operator<<(std::wostream &wout, const WTCOptions &options)
 		<< Indent(options.w3) << L"Specifies that the context returns WT_CSRCHANGE messages to it owner." << L"\n\n";
 	return wout;
 } // end function operator<<
+
+struct WTDataMask
+{
+	WTDataMask(WTPKT mask,Indent indentation,UINT cw1,UINT cw2,UINT cw3,WORD version)
+		:m(mask),indent(indentation),w1(cw1),w2(cw2),w3(cw3),iVersion(version){}
+
+	WTPKT m;
+	Indent indent;
+	UINT w1;
+	UINT w2;
+	UINT w3;
+	WORD iVersion;
+}; // end struct WTCOptions
+
+std::wostream &operator<<(std::wostream &wout, const WTDataMask &mask)
+{
+	wout << mask.indent << left << setw(mask.w1) << L"Flag" << right << setw(mask.w2) << L"Value" << L"\n";
+	wout << mask.indent << left << setw(mask.w1) << L"PK_CONTEXT" << right << setw(mask.w2) << bool(PK_CONTEXT&mask.m)
+		<< Indent(mask.w3) << L"Specifies the handle of the reporting con­text." << L"\n";
+	wout << mask.indent << left << setw(mask.w1) << L"PK_STATUS" << right << setw(mask.w2) << bool(PK_STATUS&mask.m)
+		<< Indent(mask.w3) << L"Specifies status information." << L"\n";
+	wout << mask.indent << left << setw(mask.w1) << L"PK_TIME" << right << setw(mask.w2) << bool(PK_TIME&mask.m)
+		<< Indent(mask.w3) << L"Specifies the time at which the packet was generated." << L"\n";
+	wout << mask.indent << left << setw(mask.w1) << L"PK_CHANGED" << right << setw(mask.w2) << bool(PK_CHANGED&mask.m)
+		<< Indent(mask.w3) << L"Specifies which packet data items have changed since the last packet." << L"\n";
+	wout << mask.indent << left << setw(mask.w1) << L"PK_SERIAL_NUMBER" << right << setw(mask.w2) << bool(PK_SERIAL_NUMBER&mask.m)
+		<< Indent(mask.w3) << L"Specifies the packet serial number." << L"\n";
+	wout << mask.indent << left << setw(mask.w1) << L"PK_CURSOR" << right << setw(mask.w2) << bool(PK_CURSOR&mask.m)
+		<< Indent(mask.w3) << L"Specifies the cursor that generated the packet." << L"\n";
+	wout << mask.indent << left << setw(mask.w1) << L"PK_BUTTONS" << right << setw(mask.w2) << bool(PK_BUTTONS&mask.m)
+		<< Indent(mask.w3) << L"Specifies packet button information." << L"\n";
+	wout << mask.indent << left << setw(mask.w1) << L"PK_X" << right << setw(mask.w2) << bool(PK_X&mask.m)
+		<< Indent(mask.w3) << L"Specify packet x axis data." << L"\n";
+	wout << mask.indent << left << setw(mask.w1) << L"PK_Y" << right << setw(mask.w2) << bool(PK_Y&mask.m)
+		<< Indent(mask.w3) << L"Specify packet y axis data." << L"\n";
+	wout << mask.indent << left << setw(mask.w1) << L"PK_Z" << right << setw(mask.w2) << bool(PK_Z&mask.m)
+		<< Indent(mask.w3) << L"Specify packet z axis data." << L"\n";
+	wout << mask.indent << left << setw(mask.w1) << L"PK_NORMAL_PRESSURE" << right << setw(mask.w2) << bool(PK_NORMAL_PRESSURE&mask.m)
+		<< Indent(mask.w3) << L"Specify tip-button or normal-to-surface pressure data." << L"\n";
+	wout << mask.indent << left << setw(mask.w1) << L"PK_TANGENT_PRESSURE" << right << setw(mask.w2) << bool(PK_TANGENT_PRESSURE&mask.m)
+		<< Indent(mask.w3) << L"Specify barrel-button or tan­gent-to-surface pressure data." << L"\n";
+	wout << mask.indent << left << setw(mask.w1) << L"PK_ORIENTATION" << right << setw(mask.w2) << bool(PK_ORIENTATION&mask.m)
+		<< Indent(mask.w3) << L"Specifies cursor orientation informa­tion." << L"\n";
+	if(mask.iVersion >= 0x0101) 
+		wout << mask.indent << left << setw(mask.w1) << L"PK_ROTATION" << right << setw(mask.w2) << bool(PK_ROTATION&mask.m)
+			<< Indent(mask.w3) << L"Specifies cursor rotation informa­tion." << L"\n";
+	wout << L"\n";
+	return wout;
+} // end function operator<<
+
