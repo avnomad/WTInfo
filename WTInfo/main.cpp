@@ -12,9 +12,9 @@ using std::setw;
 using std::setprecision;
 
 #include <sstream>
-using std::ostringstream;
-using std::istringstream;
-using std::stringstream;
+using std::wostringstream;
+using std::wistringstream;
+using std::wstringstream;
 
 #include <string>
 using std::wstring;
@@ -26,6 +26,18 @@ using std::unique_ptr;
 #include <windows.h>
 #define NOWTFUNCTIONS
 #include <WinTab.h>
+
+#include "error handling.h"
+#include "formating.h"
+
+//template<typename T>
+//struct LocalDelete
+//{
+//	void operator()(T *pointer) const
+//	{
+//		LocalFree(pointer);
+//	} // end function operator()
+//}; // end struct LocalDelete
 
 typedef UINT (WINAPI *WTInfo_Type)(UINT,UINT,LPVOID);
 const UINT WTInfoW_Ordinal = 1020u;
@@ -42,8 +54,8 @@ int main()
 	// configure debug parameters
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF|_CRTDBG_CHECK_ALWAYS_DF|/*_CRTDBG_CHECK_CRT_DF|*/_CRTDBG_LEAK_CHECK_DF);
 	_CrtSetReportMode(_CRT_WARN,_CRTDBG_MODE_DEBUG/*|_CRTDBG_MODE_WNDW*/);
-	_CrtSetReportMode(_CRT_ERROR,_CRTDBG_MODE_DEBUG/*|_CRTDBG_MODE_WNDW*/);
-	_CrtSetReportMode(_CRT_ASSERT,_CRTDBG_MODE_DEBUG/*|_CRTDBG_MODE_WNDW*/);
+	_CrtSetReportMode(_CRT_ERROR,_CRTDBG_MODE_DEBUG|_CRTDBG_MODE_WNDW);
+	_CrtSetReportMode(_CRT_ASSERT,_CRTDBG_MODE_DEBUG|_CRTDBG_MODE_WNDW);
 
 	// load WinTab
 	if(wintabModule = LoadLibraryW(L"WinTab32.dll"))
@@ -68,12 +80,16 @@ int main()
 	wcout << L"\n";
 
 	// individual category sizes
-	UINT nDevices,nCursors,nContexts,nExtensions,nManagers;
+	UINT nDevices,nCursors,nContexts,nExtensions,nManagers,options,save_size;
+	WORD specVersion,implVersion;
 	WTInfoW(WTI_INTERFACE,IFC_NDEVICES,&nDevices);
 	WTInfoW(WTI_INTERFACE,IFC_NCURSORS,&nCursors);
 	WTInfoW(WTI_INTERFACE,IFC_NCONTEXTS,&nContexts);
 	WTInfoW(WTI_INTERFACE,IFC_NEXTENSIONS,&nExtensions);
 	WTInfoW(WTI_INTERFACE,IFC_NMANAGERS,&nManagers);
+	WTInfoW(WTI_INTERFACE,IFC_SPECVERSION,&specVersion);
+	WTInfoW(WTI_INTERFACE,IFC_IMPLVERSION,&implVersion);
+	WTInfoW(WTI_INTERFACE,IFC_CTXSAVESIZE,&save_size);
 	UINT w1=18,w2=10;
 	wcout << indent << left << setw(w1) << L"Category" << right << setw(w2) << L"Size(Bytes)" << L"\n\n";
 	wcout << indent << left << setw(w1) << L"WTI_INTERFACE" << right << setw(w2) << WTInfoW(WTI_INTERFACE,0,nullptr) << L"B\n";
@@ -112,6 +128,7 @@ int main()
 	// actual information
 	UINT c1 = 65;
 	cw1=15,cw2=40,cw3=6;
+	wcout << std::boolalpha;
 	wcout << indent << left << setw(c1) << L"Category/Index" << L"Description" << L"\n\n";
 	wcout << indent << left << setw(c1) << L"WTI_INTERFACE" << L"Contains global interface identification and capability information." << L"\n";
 	++indent;
@@ -120,9 +137,15 @@ int main()
 	block = unique_ptr<char[]>(new char[block_size]);
 	WTInfoW(WTI_INTERFACE,IFC_WINTABID,block.get());
 	wcout << indent << left << setw(cw1) << L"IFC_WINTABID" << right << setw(cw2) << (wchar_t*)block.get() << Indent(cw3) << L"Returns a copy of the null-terminated tablet hardware identifica­tion string in the user buffer. This string should include make, model, and revi­sion information in user-readable format." << L"\n";
+	wcout << indent << left << setw(cw1) << L"IFC_SPECVERSION" << right << setw(cw2) << WTVersion(specVersion) << Indent(cw3) << L"Returns the specification version number. The high-order byte contains the major version number; the low-order byte contains the minor version number." << L"\n";
+	wcout << indent << left << setw(cw1) << L"IFC_IMPLVERSION" << right << setw(cw2) << WTVersion(implVersion) << Indent(cw3) << L"Returns the implementation version number. The high-order byte contains the major version number; the low-order byte contains the minor version number." << L"\n";
 	wcout << indent << left << setw(cw1) << L"IFC_NDEVICES" << right << setw(cw2) << nDevices << Indent(cw3) << L"Returns the number of devices supported." << L"\n";
 	wcout << indent << left << setw(cw1) << L"IFC_NCURSORS" << right << setw(cw2) << nCursors << Indent(cw3) << L"Returns the total number of cursor types supported." << L"\n";
 	wcout << indent << left << setw(cw1) << L"IFC_NCONTEXTS" << right << setw(cw2) << nContexts << Indent(cw3) << L"Returns the number of contexts supported." << L"\n";
+	WTInfoW(WTI_INTERFACE,IFC_CTXOPTIONS,&options);
+	wcout << indent << left << setw(cw1) << L"IFC_CTXOPTIONS" << right << setw(cw2) << toBinary(options) << Indent(cw3) << L"Returns flags indicating which context options are supported." << L"\n";
+	wcout << WTCOptions(options,27,25,7,6);
+	wcout << indent << left << setw(cw1) << L"IFC_CTXSAVESIZE" << right << setw(cw2) << save_size << Indent(cw3) << L"Returns the size of the save information returned from WTSave." << L"\n";
 	wcout << indent << left << setw(cw1) << L"IFC_NEXTENSIONS" << right << setw(cw2) << nExtensions << Indent(cw3) << L"Returns the number of extension data items supported." << L"\n";
 	wcout << indent << left << setw(cw1) << L"IFC_NMANAGERS" << right << setw(cw2) << nManagers << Indent(cw3) << L"Returns the number of manager handles supported." << L"\n";
 	--indent;

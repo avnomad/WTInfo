@@ -3,3 +3,4 @@ Debug/*
 ipch/*
 syntax: glob
 WTInfo.sdf
+WTInfo.opensdf
