@@ -23,6 +23,9 @@ using std::getline;
 #include <memory>
 using std::unique_ptr;
 
+#include <bitset>
+using std::bitset;
+
 #include <windows.h>
 #define NOWTFUNCTIONS
 #include <WinTab.h>
@@ -154,7 +157,7 @@ int main()
 	wcout << indent << left << setw(cw1) << L"IFC_NCURSORS" << right << setw(cw2) << nCursors << Indent(cw3) << L"Returns the total number of cursor types supported." << L"\n";
 	wcout << indent << left << setw(cw1) << L"IFC_NCONTEXTS" << right << setw(cw2) << nContexts << Indent(cw3) << L"Returns the number of contexts supported." << L"\n";
 	WTInfoW(WTI_INTERFACE,IFC_CTXOPTIONS,&options);
-	wcout << indent << left << setw(cw1) << L"IFC_CTXOPTIONS" << right << setw(cw2) << toBinary(options) << Indent(cw3) << L"Returns flags indicating which context options are supported." << L"\n";
+	wcout << indent << left << setw(cw1) << L"IFC_CTXOPTIONS" << right << setw(cw2) << bitset<32>(options) << Indent(cw3) << L"Returns flags indicating which context options are supported." << L"\n";
 	wcout << WTCOptions(options,sIndent,scw1,scw2,scw3);
 	wcout << indent << left << setw(cw1) << L"IFC_CTXSAVESIZE" << right << setw(cw2) << save_size << Indent(cw3) << L"Returns the size of the save information returned from WTSave." << L"\n";
 	wcout << indent << left << setw(cw1) << L"IFC_NEXTENSIONS" << right << setw(cw2) << nExtensions << Indent(cw3) << L"Returns the number of extension data items supported." << L"\n";
@@ -167,12 +170,12 @@ int main()
 	wcout << indent << left << setw(cw1) << L"STA_SYSCTXS" << right << setw(cw2) << curSysContexts << Indent(cw3) << L"Returns the number of system contexts currently open." << L"\n";
 	wcout << indent << left << setw(cw1) << L"STA_PKTRATE" << right << setw(cw2) << curPktRate << Indent(cw3) << L"Returns the maximum packet report rate currently being re­ceived by any context, in Hertz." << L"\n";
 	WTInfoW(WTI_STATUS,STA_PKTDATA,&dataMask);
-	wcout << indent << left << setw(cw1) << L"STA_PKTDATA" << right << setw(cw2) << toBinary(dataMask) << Indent(cw3) << L"Returns a mask indicating which packet data items are re­quested by at least one context." << L"\n";
+	wcout << indent << left << setw(cw1) << L"STA_PKTDATA" << right << setw(cw2) << bitset<32>(dataMask) << Indent(cw3) << L"Returns a mask indicating which packet data items are re­quested by at least one context." << L"\n";
 	wcout << WTDataMask(dataMask,sIndent,scw1,scw2,scw3,specVersion);
 	wcout << indent << left << setw(cw1) << L"STA_MANAGERS" << right << setw(cw2) << curManagers << Indent(cw3) << L"Returns the number of manager handles currently open." << L"\n";
 	wcout << indent << left << setw(cw1) << L"STA_SYSTEM" << right << setw(cw2) << globSysPointing << Indent(cw3) << L"Returns a non-zero value if system pointing is available to the whole screen; zero otherwise." << L"\n";
-	wcout << indent << left << setw(cw1) << L"STA_BUTTONUSE" << right << setw(cw2) << toBinary(buttonUse) << Indent(cw3) << L"Returns a button mask indicating the logical buttons whose events are requested by at least one context." << L"\n";
-	wcout << indent << left << setw(cw1) << L"STA_SYSBTNUSE" << right << setw(cw2) << toBinary(sysBtnUse) << Indent(cw3) << L"Returns a button mask indicating which logical buttons are as­signed a system button function by the current cursor's system button map." << L"\n";
+	wcout << indent << left << setw(cw1) << L"STA_BUTTONUSE" << right << setw(cw2) << bitset<32>(buttonUse) << Indent(cw3) << L"Returns a button mask indicating the logical buttons whose events are requested by at least one context." << L"\n";
+	wcout << indent << left << setw(cw1) << L"STA_SYSBTNUSE" << right << setw(cw2) << bitset<32>(sysBtnUse) << Indent(cw3) << L"Returns a button mask indicating which logical buttons are as­signed a system button function by the current cursor's system button map." << L"\n";
 	--indent;
 	wcout << indent << left << setw(c1) << L"WTI_DEFCONTEXT" << L"Contains the current default digitizing logical context." << L"\n";
 	++indent;

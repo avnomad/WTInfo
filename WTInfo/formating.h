@@ -65,20 +65,6 @@ std::wostream &operator<<(std::wostream &wout, const WTVersion &version)
 	return wout;
 } // end function operator<<
 
-wstring toBinary(UINT number)
-{
-	wstring s;
-	const UINT bits = 8*sizeof(UINT);
-	const UINT mask = 1 << bits-1;
-
-	for(UINT c = 0 ; c < bits ; ++c)
-	{
-		s.push_back((number&mask)?L'1':L'0');
-		number <<= 1;
-	} // end for
-	return s;
-} // end function toBinary
-
 double toFloatingPoint(FIX32 fixPointNumber)
 {
 	return (fixPointNumber>>16)+double(0x0000ffff&fixPointNumber)/0x00010000;
@@ -240,13 +226,13 @@ std::wostream &operator<<(std::wostream &wout, const ExtLogContext &context)
 	wout << context.indent << left << setw(context.w1) << L"Flag" << right << setw(context.w2) << L"Value" << L"\n";
 	wout << context.indent << left << setw(context.w1) << L"CTX_NAME" << right << setw(context.w2) << context.c.lcName
 		<< Indent(context.w3) << L"Returns a 40 character array containing the default name. The name may occupy zero to 39 characters; the remainder of the array is padded with zeroes." << L"\n";
-	wout << context.indent << left << setw(context.w1) << L"CTX_OPTIONS" << right << setw(context.w2) << toBinary(context.c.lcOptions)
+	wout << context.indent << left << setw(context.w1) << L"CTX_OPTIONS" << right << setw(context.w2) << bitset<32>(context.c.lcOptions)
 		<< Indent(context.w3) << L"Returns option flags. For the default digitizing context, CXO_MARGIN and CXO_MGNINSIDE are allowed. For the default system context, CXO_SYSTEM is required; CXO_PEN, CXO_MARGIN, and CXO_MGNINSIDE are allowed." << L"\n";
 	wout << WTCOptions(context.c.lcOptions,context.sIndent,context.sw1,context.sw2,context.sw3);
-	wout << context.indent << left << setw(context.w1) << L"CTX_STATUS" << right << setw(context.w2) << toBinary(context.c.lcStatus)
+	wout << context.indent << left << setw(context.w1) << L"CTX_STATUS" << right << setw(context.w2) << bitset<32>(context.c.lcStatus)
 		<< Indent(context.w3) << L"Returns zero." << L"\n";
 	wout << WTCStatus(context.c.lcStatus,context.sIndent,context.sw1,context.sw2,context.sw3);
-	wout << context.indent << left << setw(context.w1) << L"CTX_LOCKS" << right << setw(context.w2) << toBinary(context.c.lcLocks)
+	wout << context.indent << left << setw(context.w1) << L"CTX_LOCKS" << right << setw(context.w2) << bitset<32>(context.c.lcLocks)
 		<< Indent(context.w3) << L"Returns which attributes of the default context are locked." << L"\n";
 	wout << WTCLocks(context.c.lcLocks,context.sIndent,context.sw1,context.sw2,context.sw3);
 	wsout << L"0x" << std::hex << std::uppercase << std::setfill(L'0') << setw(2*sizeof(UINT)) << context.c.lcMsgBase;
@@ -256,18 +242,18 @@ std::wostream &operator<<(std::wostream &wout, const ExtLogContext &context)
 		<< Indent(context.w3) << L"Returns the default device.  If this value is -1, then it also known as a \"virtual device\"." << L"\n";
 	wout << context.indent << left << setw(context.w1) << L"CTX_PKTRATE" << right << setw(context.w2) << context.c.lcPktRate
 		<< Indent(context.w3) << L"Returns the default context packet report rate, in Hertz." << L"\n";
-	wout << context.indent << left << setw(context.w1) << L"CTX_PKTDATA" << right << setw(context.w2) << toBinary(context.c.lcPktData)
+	wout << context.indent << left << setw(context.w1) << L"CTX_PKTDATA" << right << setw(context.w2) << bitset<32>(context.c.lcPktData)
 		<< Indent(context.w3) << L"Returns which optional data items will be in packets returned from the context. For the default digitizing context, this field must at least indicate buttons, x, and y data." << L"\n";
 	wout << WTDataMask(context.c.lcPktData,context.sIndent,context.sw1,context.sw2,context.sw3,context.iVersion);
-	wout << context.indent << left << setw(context.w1) << L"CTX_PKTMODE" << right << setw(context.w2) << toBinary(context.c.lcPktMode)
+	wout << context.indent << left << setw(context.w1) << L"CTX_PKTMODE" << right << setw(context.w2) << bitset<32>(context.c.lcPktMode)
 		<< Indent(context.w3) << L"Returns whether the packet data items will be returned in absolute or relative mode." << L"\n";
 	wout << WTDataMask(context.c.lcPktMode,context.sIndent,context.sw1,context.sw2,context.sw3,context.iVersion);
-	wout << context.indent << left << setw(context.w1) << L"CTX_MOVEMASK" << right << setw(context.w2) << toBinary(context.c.lcMoveMask)
+	wout << context.indent << left << setw(context.w1) << L"CTX_MOVEMASK" << right << setw(context.w2) << bitset<32>(context.c.lcMoveMask)
 		<< Indent(context.w3) << L"Returns which packet data items can generate motion events in the context." << L"\n";
 	wout << WTDataMask(context.c.lcMoveMask,context.sIndent,context.sw1,context.sw2,context.sw3,context.iVersion);
-	wout << context.indent << left << setw(context.w1) << L"CTX_BTNDNMASK" << right << setw(context.w2) << toBinary(context.c.lcBtnDnMask)
+	wout << context.indent << left << setw(context.w1) << L"CTX_BTNDNMASK" << right << setw(context.w2) << bitset<32>(context.c.lcBtnDnMask)
 		<< Indent(context.w3) << L"Returns the buttons for which button press events will be processed in the context. The default context must at least select button press events for one button." << L"\n";
-	wout << context.indent << left << setw(context.w1) << L"CTX_BTNUPMASK" << right << setw(context.w2) << toBinary(context.c.lcBtnUpMask)
+	wout << context.indent << left << setw(context.w1) << L"CTX_BTNUPMASK" << right << setw(context.w2) << bitset<32>(context.c.lcBtnUpMask)
 		<< Indent(context.w3) << L"Returns the buttons for which button release events will be processed in the context." << L"\n";
 	wout << context.indent << left << setw(context.w1) << L"CTX_INORGX" << right << setw(context.w2) << context.c.lcInOrgX
 		<< Indent(context.w3) << L"Returns the origin of the context's input area in the tablet's native coordinates, along the x axis." << L"\n";
@@ -316,3 +302,36 @@ std::wostream &operator<<(std::wostream &wout, const ExtLogContext &context)
 	wout << L"\n";
 	return wout;
 } // end function operator<<
+
+
+//struct Device
+//{
+//	struct Capabilities
+//	{
+//		UINT bitfield;
+//
+//		Capabilities(UINT flags)
+//			:bitfield(flags){}
+//
+//		operator UINT()
+//		{
+//			return bitfield;
+//		} // end function operator UINT
+//	}; // end struct Capabilities
+//
+//	wstring name;
+//	Capabilities capabilities;
+//	unsigned int nCursorTypes;
+//	unsigned int firstCursor;
+//	unsigned int reportRate;
+//
+//
+//	Device(UINT deviceIndex)
+//	{
+//
+//
+//	} // end Device constructor
+//
+//
+//	
+//}; // end struct Device
