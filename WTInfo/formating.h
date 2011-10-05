@@ -223,7 +223,7 @@ struct ExtLogContext
 std::wostream &operator<<(std::wostream &wout, const ExtLogContext &context)
 {
 	std::wostringstream wsout;
-	wout << context.indent << left << setw(context.w1) << L"Flag" << right << setw(context.w2) << L"Value" << L"\n";
+	wout << context.indent << left << setw(context.w1) << L"Index" << right << setw(context.w2) << L"Value" << L"\n";
 	wout << context.indent << left << setw(context.w1) << L"CTX_NAME" << right << setw(context.w2) << context.c.lcName
 		<< Indent(context.w3) << L"Returns a 40 character array containing the default name. The name may occupy zero to 39 characters; the remainder of the array is padded with zeroes." << L"\n";
 	wout << context.indent << left << setw(context.w1) << L"CTX_OPTIONS" << right << setw(context.w2) << bitset<32>(context.c.lcOptions)
@@ -304,34 +304,215 @@ std::wostream &operator<<(std::wostream &wout, const ExtLogContext &context)
 } // end function operator<<
 
 
-//struct Device
-//{
-//	struct Capabilities
-//	{
-//		UINT bitfield;
-//
-//		Capabilities(UINT flags)
-//			:bitfield(flags){}
-//
-//		operator UINT()
-//		{
-//			return bitfield;
-//		} // end function operator UINT
-//	}; // end struct Capabilities
-//
-//	wstring name;
-//	Capabilities capabilities;
-//	unsigned int nCursorTypes;
-//	unsigned int firstCursor;
-//	unsigned int reportRate;
-//
-//
-//	Device(UINT deviceIndex)
-//	{
-//
-//
-//	} // end Device constructor
-//
-//
-//	
-//}; // end struct Device
+struct WTDevice	// this is not a class to export in a library! naming, members, types are lousy!
+{
+	//enum Capabilities{INTEGRATED,TOUCH,HARDPROX,PHYSID_CURSORS};
+
+	wstring name;
+	UINT capabilities;
+	unsigned int nCursorTypes;
+	unsigned int firstCursor;
+	unsigned int reportRate;
+	WTPKT packetData;
+	WTPKT packetMode;
+	WTPKT cursorData;
+	int xMargin;
+	int yMargin;
+	int zMargin;
+	AXIS x;
+	AXIS y;
+	AXIS z;
+	AXIS nPressure;
+	AXIS tPressure;
+	AXIS azimuth;
+	AXIS altitude;
+	AXIS twist;
+	AXIS pitch;
+	AXIS roll;
+	AXIS yaw;
+	wstring plugAndPlayID;
+
+	WORD iVersion;
+
+	WTDevice(unsigned int deviceIndex,WORD version)
+	{
+		AXIS axes[3];
+		unique_ptr<char[]> buffer;
+		unsigned int buffer_size;
+
+		iVersion = version;
+
+		buffer_size = WTInfoW(WTI_DEVICES+deviceIndex,DVC_NAME,nullptr);
+		buffer = unique_ptr<char[]>(new char[buffer_size]);
+		WTInfoW(WTI_DEVICES+deviceIndex,DVC_NAME,buffer.get());
+		name = (wchar_t*)buffer.get();
+		
+		WTInfoW(WTI_DEVICES+deviceIndex,DVC_HARDWARE,&capabilities);
+		WTInfoW(WTI_DEVICES+deviceIndex,DVC_NCSRTYPES,&nCursorTypes);
+		WTInfoW(WTI_DEVICES+deviceIndex,DVC_FIRSTCSR,&firstCursor);
+		WTInfoW(WTI_DEVICES+deviceIndex,DVC_PKTRATE,&reportRate);
+		WTInfoW(WTI_DEVICES+deviceIndex,DVC_PKTDATA,&packetData);
+		WTInfoW(WTI_DEVICES+deviceIndex,DVC_PKTMODE,&packetMode);
+		WTInfoW(WTI_DEVICES+deviceIndex,DVC_CSRDATA,&cursorData);
+		WTInfoW(WTI_DEVICES+deviceIndex,DVC_XMARGIN,&xMargin);
+		WTInfoW(WTI_DEVICES+deviceIndex,DVC_YMARGIN,&yMargin);
+		WTInfoW(WTI_DEVICES+deviceIndex,DVC_ZMARGIN,&zMargin);
+		WTInfoW(WTI_DEVICES+deviceIndex,DVC_X,&x);
+		WTInfoW(WTI_DEVICES+deviceIndex,DVC_Y,&y);
+		WTInfoW(WTI_DEVICES+deviceIndex,DVC_Z,&z);
+		WTInfoW(WTI_DEVICES+deviceIndex,DVC_NPRESSURE,&nPressure);
+		WTInfoW(WTI_DEVICES+deviceIndex,DVC_TPRESSURE,&tPressure);
+		WTInfoW(WTI_DEVICES+deviceIndex,DVC_ORIENTATION,axes);
+		azimuth = axes[0];
+		altitude = axes[1];
+		twist = axes[2];
+		if(iVersion >= 0x0101)
+		{
+			WTInfoW(WTI_DEVICES+deviceIndex,DVC_ROTATION,&axes);
+			pitch = axes[0];
+			roll = axes[1];
+			yaw = axes[2];
+
+			buffer_size = WTInfoW(WTI_DEVICES+deviceIndex,DVC_PNPID,nullptr);
+			buffer = unique_ptr<char[]>(new char[buffer_size]);
+			WTInfoW(WTI_DEVICES+deviceIndex,DVC_PNPID,buffer.get());
+			plugAndPlayID = (wchar_t*)buffer.get();
+		} // end if
+	} // end Device constructotr	
+}; // end struct WTDevice
+
+struct ExtWTDevice : public WTDevice	// extra information for printing
+{
+	Indent indent;
+	Indent sIndent;
+	UINT w1;
+	UINT w2;
+	UINT w3;
+	UINT sw1;
+	UINT sw2;
+	UINT sw3;
+
+	ExtWTDevice(unsigned int deviceIndex,WORD version,Indent indentation,UINT cw1,UINT cw2,UINT cw3,Indent subIndent,UINT scw1,UINT scw2,UINT scw3)
+		:WTDevice(deviceIndex,version),indent(indentation),w1(cw1),w2(cw2),w3(cw3),sIndent(subIndent),sw1(scw1),sw2(scw2),sw3(scw3){}
+}; // end ExtWTDevice
+
+struct WTDCapabilities
+{
+	WTDCapabilities(UINT capabilities,Indent indentation,UINT cw1,UINT cw2,UINT cw3,WORD version)
+		:c(capabilities),indent(indentation),w1(cw1),w2(cw2),w3(cw3),iVersion(version){}
+
+	UINT c;
+	Indent indent;
+	UINT w1;
+	UINT w2;
+	UINT w3;
+	WORD iVersion;
+}; // end struct WTDCapabilities
+
+std::wostream &operator<<(std::wostream &wout, const WTDCapabilities &capabilities)
+{
+	wout << capabilities.indent << left << setw(capabilities.w1) << L"Capability" << right << setw(capabilities.w2) << L"Value" << L"\n";
+	wout << capabilities.indent << left << setw(capabilities.w1) << L"HWC_INTEGRATED" << right << setw(capabilities.w2) << bool(HWC_INTEGRATED&capabilities.c)
+		<< Indent(capabilities.w3) << L"Indicates that the display and digitizer share the same surface." << L"\n";
+	wout << capabilities.indent << left << setw(capabilities.w1) << L"HWC_TOUCH" << right << setw(capabilities.w2) << bool(HWC_TOUCH&capabilities.c)
+		<< Indent(capabilities.w3) << L"Indicates that the cursor must be in physical contact with the device to report position." << L"\n";
+	wout << capabilities.indent << left << setw(capabilities.w1) << L"HWC_HARDPROX" << right << setw(capabilities.w2) << bool(HWC_HARDPROX&capabilities.c)
+		<< Indent(capabilities.w3) << L"Indicates that device can generate events when the cursor is entering and leaving the physical detection range." << L"\n";
+	if(capabilities.iVersion >= 0x0101)
+	{
+		wout << capabilities.indent << left << setw(capabilities.w1) << L"HWC_PHYSID_CURSORS" << right << setw(capabilities.w2) << bool(HWC_PHYSID_CURSORS&capabilities.c)
+			<< Indent(capabilities.w3) << L"Indicates that device can uniquely identify the active cursor in hardware." << L"\n";
+	} // end if
+	wout << L"\n";
+	return wout;
+} // end function operator<<
+
+std::wostream &operator<<(std::wostream &wout, const AXIS &axis)
+{
+	wstringstream wsout;
+	wsout << axis.axMin << L".." << axis.axMax << L" @ ";
+	if(axis.axUnits == TU_NONE)
+		wsout << L"no units";
+	else
+	{
+		wsout << toFloatingPoint(axis.axResolution) << L'/';
+		switch(axis.axUnits)
+		{
+		case TU_INCHES:
+			wsout << L"inch";
+			break;
+		case TU_CENTIMETERS:
+			wsout << L"cm";
+			break;
+		case TU_CIRCLE:
+			wsout << L"cycle";
+			break;
+		} // end switch
+	} // end else
+	wout << wsout.str();
+	return wout;
+} // end function operator<<
+
+std::wostream &operator<<(std::wostream &wout, const ExtWTDevice &device)
+{
+	wout << device.indent << left << setw(device.w1) << L"Index" << right << setw(device.w2) << L"Value" << L"\n";
+	wout << device.indent << left << setw(device.w1) << L"DVC_NAME" << right << setw(device.w2) << device.name
+		<< Indent(device.w3) << L"Returns a displayable null- terminated string describing the device, manufacturer, and revision level." << L"\n";
+	wout << device.indent << left << setw(device.w1) << L"DVC_HARDWARE" << right << setw(device.w2) << bitset<32>(device.capabilities)
+		<< Indent(device.w3) << L"Returns flags indicating hardware and driver capabilities, as defined below:" << L"\n";
+	wout << WTDCapabilities(device.capabilities,device.sIndent,device.sw1,device.sw2,device.sw3,device.iVersion);
+	wout << device.indent << left << setw(device.w1) << L"DVC_NCSRTYPES" << right << setw(device.w2) << device.nCursorTypes
+		<< Indent(device.w3) << L"Returns the number of supported cursor types." << L"\n";
+	wout << device.indent << left << setw(device.w1) << L"DVC_FIRSTCSR" << right << setw(device.w2) << device.firstCursor
+		<< Indent(device.w3) << L"Returns the first cursor type number for the device." << L"\n";
+	wout << device.indent << left << setw(device.w1) << L"DVC_PKTRATE" << right << setw(device.w2) << device.reportRate
+		<< Indent(device.w3) << L"Returns the maximum packet report rate in Hertz." << L"\n";
+	wout << device.indent << left << setw(device.w1) << L"DVC_PKTDATA" << right << setw(device.w2) << bitset<32>(device.packetData)
+		<< Indent(device.w3) << L"Returns a bit mask indicating which packet data items are always available." << L"\n";
+	wout << WTDataMask(device.packetData,device.sIndent,device.sw1,device.sw2,device.sw3,device.iVersion);
+	wout << device.indent << left << setw(device.w1) << L"DVC_PKTMODE" << right << setw(device.w2) << bitset<32>(device.packetMode)
+		<< Indent(device.w3) << L"Returns a bit mask indicating which packet data items are physically relative, i.e., items for which the hardware can only report change, not absolute measurement." << L"\n";
+	wout << WTDataMask(device.packetMode,device.sIndent,device.sw1,device.sw2,device.sw3,device.iVersion);
+	wout << device.indent << left << setw(device.w1) << L"DVC_CSRDATA" << right << setw(device.w2) << bitset<32>(device.cursorData)
+		<< Indent(device.w3) << L"Returns a bit mask indicating which packet data items are only available when certain cursors are connected. The individual cursor descriptions must be consulted to determine which cursors return which data." << L"\n";
+	wout << WTDataMask(device.cursorData,device.sIndent,device.sw1,device.sw2,device.sw3,device.iVersion);
+	wout << device.indent << left << setw(device.w1) << L"DVC_XMARGIN" << right << setw(device.w2) << device.xMargin
+		<< Indent(device.w3) << L"Returns the size of tablet context margins in tablet native coordinates, in the x direction." << L"\n";
+	wout << device.indent << left << setw(device.w1) << L"DVC_YMARGIN" << right << setw(device.w2) << device.yMargin
+		<< Indent(device.w3) << L"Returns the size of tablet context margins in tablet native coordinates, in the y direction." << L"\n";
+	wout << device.indent << left << setw(device.w1) << L"DVC_ZMARGIN" << right << setw(device.w2) << device.zMargin
+		<< Indent(device.w3) << L"Returns the size of tablet context margins in tablet native coordinates, in the z direction." << L"\n";
+	wout << device.indent << left << setw(device.w1) << L"DVC_X" << right << setw(device.w2) << device.x
+		<< Indent(device.w3) << L"Returns the tablet's range and resolution capabilities, in the x axis." << L"\n";
+	wout << device.indent << left << setw(device.w1) << L"DVC_Y" << right << setw(device.w2) << device.y
+		<< Indent(device.w3) << L"Returns the tablet's range and resolution capabilities, in the y axis." << L"\n";
+	wout << device.indent << left << setw(device.w1) << L"DVC_Z" << right << setw(device.w2) << device.z
+		<< Indent(device.w3) << L"Returns the tablet's range and resolution capabilities, in the z axis." << L"\n";
+	wout << device.indent << left << setw(device.w1) << L"DVC_NPRESSURE" << right << setw(device.w2) << device.nPressure
+		<< Indent(device.w3) << L"Returns the tablet's range and resolution capabilities, for the normal pressure input." << L"\n";
+	wout << device.indent << left << setw(device.w1) << L"DVC_TPRESSURE" << right << setw(device.w2) << device.tPressure
+		<< Indent(device.w3) << L"Returns the tablet's range and resolution capabilities, for the tangential pressure input." << L"\n";
+	wout << device.indent << left << setw(device.w1) << L"DVC_ORIENTATION" << right << setw(device.w2) << L""
+		<< Indent(device.w3) << L"Returns a 3-element array describing the tablet's orientation range and resolution capabilities." << L"\n";
+	wout << Indent(device.indent.size+4) << left << setw(device.w1-4) << L"azimuth" << right << setw(device.w2) << device.azimuth
+		<< Indent(device.w3) << L"Specifies the clockwise rotation of the cursor about the z axis through a full circular range." << L"\n";
+	wout << Indent(device.indent.size+4) << left << setw(device.w1-4) << L"altitude" << right << setw(device.w2) << device.altitude
+		<< Indent(device.w3) << L"Specifies the angle with the x-y plane through a signed, semicir­cular range.  Positive values specify an angle upward toward the positive z axis; negative values specify an angle downward toward the negative z axis." << L"\n";
+	wout << Indent(device.indent.size+4) << left << setw(device.w1-4) << L"twist" << right << setw(device.w2) << device.twist
+		<< Indent(device.w3) << L"Specifies the clockwise rotation of the cursor about its own major axis." << L"\n";
+	if(device.iVersion >= 0x0101)
+	{
+		wout << device.indent << left << setw(device.w1) << L"DVC_ROTATION" << right << setw(device.w2) << L""
+			<< Indent(device.w3) << L"Returns a 3-element array describing the tablet's rotation range and resolution capabilities." << L"\n";
+		wout << Indent(device.indent.size+4) << left << setw(device.w1-4) << L"pitch" << right << setw(device.w2) << device.pitch
+			<< Indent(device.w3) << L"Specifies the pitch of the cursor." << L"\n";
+		wout << Indent(device.indent.size+4) << left << setw(device.w1-4) << L"roll" << right << setw(device.w2) << device.roll
+			<< Indent(device.w3) << L"Specifies the roll of the cursor." << L"\n";
+		wout << Indent(device.indent.size+4) << left << setw(device.w1-4) << L"yaw" << right << setw(device.w2) << device.yaw
+			<< Indent(device.w3) << L"Specifies the yaw of the cursor." << L"\n";
+		wout << device.indent << left << setw(device.w1) << L"DVC_PNPID" << right << setw(device.w2) << device.plugAndPlayID
+			<< Indent(device.w3) << L"Returns a null-terminated string containing the device's Plug and Play ID." << L"\n";
+	} // end if
+	wout << L"\n";
+	return wout;
+} // end function operator<<

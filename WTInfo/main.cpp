@@ -30,6 +30,10 @@ using std::bitset;
 #define NOWTFUNCTIONS
 #include <WinTab.h>
 
+typedef UINT (WINAPI *WTInfo_Type)(UINT,UINT,LPVOID);
+const UINT WTInfoW_Ordinal = 1020u;
+WTInfo_Type WTInfoW = nullptr;
+
 #include "error handling.h"
 #include "formating.h"
 
@@ -41,11 +45,6 @@ using std::bitset;
 //		LocalFree(pointer);
 //	} // end function operator()
 //}; // end struct LocalDelete
-
-typedef UINT (WINAPI *WTInfo_Type)(UINT,UINT,LPVOID);
-const UINT WTInfoW_Ordinal = 1020u;
-WTInfo_Type WTInfoW = nullptr;
-
 
 int main()
 {
@@ -140,7 +139,7 @@ int main()
 
 	// actual information
 	UINT c1 = 65;
-	cw1=18,cw2=37,cw3=6;
+	cw1=19,cw2=36,cw3=6;
 	UINT sIndent=27,scw1=25,scw2=7,scw3=6;
 	wcout << std::boolalpha;
 	wcout << indent << left << setw(c1) << L"Category/Index" << L"Description" << L"\n\n";
@@ -188,17 +187,26 @@ int main()
 	WTInfoW(WTI_DEFSYSCTX,0,&context);
 	wcout << context;
 	--indent;
+	UINT sw1=9,sw2=3,sc3=2;
 	wcout << indent << left << setw(c1) << L"WTI_DEVICES" << L"Each contains capability and status information for a device." << L"\n";
+	++indent;
+	for(UINT c = 0 ; c < nDevices ; ++c)
+	{
+		wcout << indent << left << setw(sw1) << L"device" << right << setw(sw2) << c << L"\n";
+		++indent;
+		wcout << ExtWTDevice(c,specVersion,indent,cw1-4,cw2,cw3,sIndent,scw1,scw2,scw3);
+		--indent;
+	} // end for
+	--indent;
 	wcout << indent << left << setw(c1) << L"WTI_CURSORS" << L"Each contains capability and status information for a cursor type." << L"\n";
 	wcout << indent << left << setw(c1) << L"WTI_EXTENSIONS" << L"Each contains descriptive information and defaults for an extension." << L"\n";
 	wcout << indent << left << setw(c1) << L"WTI_DDCTXS" << L"Each contains the current default digitizing logical context for the corresponding device." << L"\n";
 	++indent;
 	++context.indent;
 	context.w1 -= 4;
-	cw1=9,cw2=3,cw3=2;
 	for(UINT c = 0 ; c < nDevices ; ++c)
 	{
-		wcout << indent << left << setw(cw1) << L"device" << right << setw(cw2) << c << L"\n";
+		wcout << indent << left << setw(sw1) << L"device" << right << setw(sw2) << c << L"\n";
 		WTInfoW(WTI_DDCTXS+c,0,&context);
 		wcout << context;
 	} // end for
@@ -207,7 +215,7 @@ int main()
 	++indent;
 	for(UINT c = 0 ; c < nDevices ; ++c)
 	{
-		wcout << indent << left << setw(cw1) << L"device" << right << setw(cw2) << c << L"\n";
+		wcout << indent << left << setw(sw1) << L"device" << right << setw(sw2) << c << L"\n";
 		WTInfoW(WTI_DSCTXS+c,0,&context);
 		wcout << context;
 	} // end for
