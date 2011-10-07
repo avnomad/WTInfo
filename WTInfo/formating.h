@@ -378,7 +378,7 @@ struct WTDevice	// this is not a class to export in a library! naming, members, 
 			WTInfoW(WTI_DEVICES+deviceIndex,DVC_PNPID,buffer.get());
 			plugAndPlayID = (wchar_t*)buffer.get();
 		} // end if
-	} // end Device constructotr	
+	} // end WTDevice constructotr	
 }; // end struct WTDevice
 
 struct ExtWTDevice : public WTDevice	// extra information for printing
@@ -394,7 +394,7 @@ struct ExtWTDevice : public WTDevice	// extra information for printing
 
 	ExtWTDevice(unsigned int deviceIndex,WORD version,Indent indentation,UINT cw1,UINT cw2,UINT cw3,Indent subIndent,UINT scw1,UINT scw2,UINT scw3)
 		:WTDevice(deviceIndex,version),indent(indentation),w1(cw1),w2(cw2),w3(cw3),sIndent(subIndent),sw1(scw1),sw2(scw2),sw3(scw3){}
-}; // end ExtWTDevice
+}; // end struct ExtWTDevice
 
 struct WTDCapabilities
 {
@@ -512,6 +512,317 @@ std::wostream &operator<<(std::wostream &wout, const ExtWTDevice &device)
 			<< Indent(device.w3) << L"Specifies the yaw of the cursor." << L"\n";
 		wout << device.indent << left << setw(device.w1) << L"DVC_PNPID" << right << setw(device.w2) << device.plugAndPlayID
 			<< Indent(device.w3) << L"Returns a null-terminated string containing the device's Plug and Play ID." << L"\n";
+	} // end if
+	wout << L"\n";
+	return wout;
+} // end function operator<<
+
+#include <vector>
+using std::vector;
+#include <array>
+using std::array;
+#include <cstring>
+using std::wcslen;
+
+struct WTCursor	// this is not a class to export in a library! naming, members, types are lousy!
+{
+	wstring name;
+	bool active;
+	WTPKT packetData;
+	BYTE nButtons;
+	BYTE nButtonBits;
+	vector<wstring> buttonNames;
+	array<BYTE,32> buttonMap;
+	array<BYTE,32> systemButtonMap;
+	bool hasNPButton;
+	BYTE npButton;
+	bool hasNPMarks;
+	UINT npReleaseMark;
+	UINT npPressMark;
+	bool hasNPResponse;
+	vector<UINT> npResponse;
+	bool hasTPButton;
+	BYTE tpButton;
+	bool hasTPMarks;
+	UINT tpReleaseMark;
+	UINT tpPressMark;
+	bool hasTPResponse;
+	vector<UINT> tpResponse;
+	DWORD physicalID;
+	UINT modeNumber;
+	UINT minPacketData;
+	UINT minButtons;
+	UINT capabilities;
+
+	WORD iVersion;
+
+	WTCursor(unsigned int cursorIndex,WORD version)
+	{
+		unique_ptr<char[]> buffer;
+		wchar_t *strStart;
+		unsigned int buffer_size;
+		BOOL active;
+		UINT marks[2];
+
+		iVersion = version;
+
+		buffer_size = WTInfoW(WTI_CURSORS+cursorIndex,CSR_NAME,nullptr);
+		buffer = unique_ptr<char[]>(new char[buffer_size]);
+		WTInfoW(WTI_CURSORS+cursorIndex,CSR_NAME,buffer.get());
+		name = (wchar_t*)buffer.get();
+
+		WTInfoW(WTI_CURSORS+cursorIndex,CSR_ACTIVE,&active);
+		this->active = active;
+		WTInfoW(WTI_CURSORS+cursorIndex,CSR_PKTDATA,&packetData);
+		WTInfoW(WTI_CURSORS+cursorIndex,CSR_BUTTONS,&nButtons);
+		WTInfoW(WTI_CURSORS+cursorIndex,CSR_BUTTONBITS,&nButtonBits);
+
+		buffer_size = WTInfoW(WTI_CURSORS+cursorIndex,CSR_BTNNAMES,nullptr);
+		buffer = unique_ptr<char[]>(new char[buffer_size]);
+		WTInfoW(WTI_CURSORS+cursorIndex,CSR_BTNNAMES,buffer.get());
+		strStart = (wchar_t*)buffer.get();
+		while(*strStart)
+		{
+			buttonNames.push_back(strStart);
+			strStart += wcslen(strStart)+1;
+		} // end while
+
+		WTInfoW(WTI_CURSORS+cursorIndex,CSR_BUTTONMAP,buttonMap.data());
+		WTInfoW(WTI_CURSORS+cursorIndex,CSR_SYSBTNMAP,systemButtonMap.data());
+		hasNPButton = WTInfoW(WTI_CURSORS+cursorIndex,CSR_NPBUTTON,&npButton);
+		hasNPMarks = WTInfoW(WTI_CURSORS+cursorIndex,CSR_NPBTNMARKS,marks);
+		npReleaseMark = marks[0];
+		npPressMark = marks[1];
+		hasNPResponse = buffer_size = WTInfoW(WTI_CURSORS+cursorIndex,CSR_NPRESPONSE,nullptr);
+		buffer = unique_ptr<char[]>(new char[buffer_size]);
+		WTInfoW(WTI_CURSORS+cursorIndex,CSR_NPRESPONSE,buffer.get());
+		for(UINT c = 0 ; c < buffer_size/sizeof(UINT) ; ++c)
+			npResponse.push_back(((UINT*)buffer.get())[c]);
+		hasTPButton = WTInfoW(WTI_CURSORS+cursorIndex,CSR_TPBUTTON,&tpButton);
+		hasTPMarks = WTInfoW(WTI_CURSORS+cursorIndex,CSR_TPBTNMARKS,marks);
+		tpReleaseMark = marks[0];
+		tpPressMark = marks[1];
+		hasTPResponse = buffer_size = WTInfoW(WTI_CURSORS+cursorIndex,CSR_TPRESPONSE,nullptr);
+		buffer = unique_ptr<char[]>(new char[buffer_size]);
+		WTInfoW(WTI_CURSORS+cursorIndex,CSR_TPRESPONSE,buffer.get());
+		for(UINT c = 0 ; c < buffer_size/sizeof(UINT) ; ++c)
+			tpResponse.push_back(((UINT*)buffer.get())[c]);
+		if(iVersion >= 0x0101)
+		{
+			WTInfoW(WTI_CURSORS+cursorIndex,CSR_PHYSID,&physicalID);
+			WTInfoW(WTI_CURSORS+cursorIndex,CSR_CAPABILITIES,&capabilities);
+			if(capabilities & CRC_MULTIMODE)
+				WTInfoW(WTI_CURSORS+cursorIndex,CSR_MODE,&modeNumber);
+			if(capabilities & CRC_AGGREGATE)
+			{
+				WTInfoW(WTI_CURSORS+cursorIndex,CSR_MINPKTDATA,&minPacketData);
+				WTInfoW(WTI_CURSORS+cursorIndex,CSR_MINBUTTONS,&minButtons);
+			} // end if
+		} // end if
+	} // end WTCursor constructotr	
+}; // end struct WTCursor
+
+struct ExtWTCursor : public WTCursor	// extra information for printing
+{
+	Indent indent;
+	Indent sIndent;
+	UINT w1;
+	UINT w2;
+	UINT w3;
+	UINT sw1;
+	UINT sw2;
+	UINT sw3;
+
+	ExtWTCursor(unsigned int deviceIndex,WORD version,Indent indentation,UINT cw1,UINT cw2,UINT cw3,Indent subIndent,UINT scw1,UINT scw2,UINT scw3)
+		:WTCursor(deviceIndex,version),indent(indentation),w1(cw1),w2(cw2),w3(cw3),sIndent(subIndent),sw1(scw1),sw2(scw2),sw3(scw3){}
+}; // end struct ExtWTCursor
+
+wstring toString(BYTE actionCode)
+{
+	wstring s;
+	switch(actionCode&0x0f)
+	{
+	case SBN_NONE:	s += L"SBN_NONE"; break;
+	case SBN_LCLICK:	s += L"SBN_LCLICK"; break;
+	case SBN_LDBLCLICK:	s += L"SBN_LDBLCLICK"; break;
+	case SBN_LDRAG:	s += L"SBN_LDRAG"; break;
+	case SBN_RCLICK:	s += L"SBN_RCLICK"; break;
+	case SBN_RDBLCLICK:	s += L"SBN_RDBLCLICK"; break;
+	case SBN_RDRAG:	s += L"SBN_RDRAG"; break;
+	case SBN_MCLICK:	s += L"SBN_MCLICK"; break;
+	case SBN_MDBLCLICK:	s += L"SBN_MDBLCLICK"; break;
+	case SBN_MDRAG:	s += L"SBN_MDRAG"; break;
+	default: s += L"unknown"; break;
+	} // end switch
+	switch(actionCode&0xf0)
+	{
+	case SBN_PTCLICK:	s += L" & SBN_PTCLICK"; break;
+	case SBN_PTDBLCLICK:	s += L" & SBN_PTDBLCLICK"; break;
+	case SBN_PTDRAG:	s += L" & SBN_PTDRAG"; break;
+	case SBN_PNCLICK:	s += L" & SBN_PNCLICK"; break;
+	case SBN_PNDBLCLICK:	s += L" & SBN_PNDBLCLICK"; break;
+	case SBN_PNDRAG:	s += L" & SBN_PNDRAG"; break;
+	case SBN_P1CLICK:	s += L" & SBN_P1CLICK"; break;
+	case SBN_P1DBLCLICK:	s += L" & SBN_P1DBLCLICK"; break;
+	case SBN_P1DRAG:	s += L" & SBN_P1DRAG"; break;
+	case SBN_P2CLICK:	s += L" & SBN_P2CLICK"; break;
+	case SBN_P2DBLCLICK:	s += L" & SBN_P2DBLCLICK"; break;
+	case SBN_P2DRAG:	s += L" & SBN_P2DRAG"; break;
+	case SBN_P3CLICK:	s += L" & SBN_P3CLICK"; break;
+	case SBN_P3DBLCLICK:	s += L" & SBN_P3DBLCLICK"; break;
+	case SBN_P3DRAG:	s += L" & SBN_P3DRAG"; break;
+	} // end switch		
+	return s;
+} // end function toString
+
+struct WTCCapability
+{
+	WTCCapability(UINT capability,Indent indentation,UINT cw1,UINT cw2,UINT cw3)
+		:c(capability),indent(indentation),w1(cw1),w2(cw2),w3(cw3){}
+
+	UINT c;
+	Indent indent;
+	UINT w1;
+	UINT w2;
+	UINT w3;
+}; // end struct WTCCapability
+
+std::wostream &operator<<(std::wostream &wout, const WTCCapability &capability)
+{
+	wout << capability.indent << left << setw(capability.w1) << L"Capability" << right << setw(capability.w2) << L"Value" << L"\n";
+	wout << capability.indent << left << setw(capability.w1) << L"CRC_MULTIMODE" << right << setw(capability.w2) << bool(CRC_MULTIMODE&capability.c)
+		<< Indent(capability.w3) << L"Indicates this cursor type describes one of several modes of a single physical cursor. Consecutive cursor type categories de­scribe the modes; the CSR_MODE data item gives the mode number of each cursor type." << L"\n";
+	wout << capability.indent << left << setw(capability.w1) << L"CRC_AGGREGATE" << right << setw(capability.w2) << bool(CRC_AGGREGATE&capability.c)
+		<< Indent(capability.w3) << L"Indicates this cursor type describes several physical cursors that cannot be distinguished by software." << L"\n";
+	wout << capability.indent << left << setw(capability.w1) << L"CRC_INVERT" << right << setw(capability.w2) << bool(CRC_INVERT&capability.c)
+		<< Indent(capability.w3) << L"Indicates this cursor type describes the physical cursor in its inverted orientation; the previous consecutive cursor type category describes the normal orientation." << L"\n";
+	wout << L"\n";
+	return wout;
+} // end function operator<<
+
+#include <algorithm>
+using std::for_each;
+using std::begin;
+using std::end;
+
+std::wostream &operator<<(std::wostream &wout, const ExtWTCursor &cursor)
+{
+	UINT c = 0;
+	wout << cursor.indent << left << setw(cursor.w1) << L"Index" << right << setw(cursor.w2) << L"Value" << L"\n";
+	wout << cursor.indent << left << setw(cursor.w1) << L"CSR_NAME" << right << setw(cursor.w2) << cursor.name
+		<< Indent(cursor.w3) << L"Returns a displayable zero-terminated string containing the name of the cursor." << L"\n";
+	wout << cursor.indent << left << setw(cursor.w1) << L"CSR_ACTIVE" << right << setw(cursor.w2) << cursor.active
+		<< Indent(cursor.w3) << L"Returns whether the cursor is currently connected." << L"\n";
+	wout << cursor.indent << left << setw(cursor.w1) << L"CSR_PKTDATA" << right << setw(cursor.w2) << bitset<32>(cursor.packetData)
+		<< Indent(cursor.w3) << L"Returns a bit mask indicating the packet data items supported when this cursor is connected." << L"\n";
+	wout << WTDataMask(cursor.packetData,cursor.sIndent,cursor.sw1,cursor.sw2,cursor.sw3,cursor.iVersion);
+	wout << cursor.indent << left << setw(cursor.w1) << L"CSR_BUTTONS" << right << setw(cursor.w2) << cursor.nButtons
+		<< Indent(cursor.w3) << L"Returns the number of buttons on this cursor." << L"\n";
+	wout << cursor.indent << left << setw(cursor.w1) << L"CSR_BUTTONBITS" << right << setw(cursor.w2) << cursor.nButtonBits
+		<< Indent(cursor.w3) << L"Returns the number of bits of raw button data returned by the hardware." << L"\n";
+	wout << cursor.indent << left << setw(cursor.w1) << L"CSR_BTNNAMES" << right << setw(cursor.w2) << L""
+		<< Indent(cursor.w3) << L"Returns a list of zero-terminated strings containing the names of the cursor's buttons. The number of names in the list is the same as the number of buttons on the cursor." << L"\n";
+	//for_each(begin(cursor.buttonNames),end(cursor.buttonNames),[&](const wstring &s)
+	//{
+	//	wout << cursor.indent << left << setw(cursor.w1) << c++ << right << setw(cursor.w2) << s
+	//		<< Indent(cursor.w3) << L"" << L"\n";
+	//}); // end for_each
+	wout << cursor.indent << left << setw(cursor.w1) << L"CSR_BUTTONMAP" << right << setw(cursor.w2) << L""
+		<< Indent(cursor.w3) << L"Returns a 32 byte array of logical button numbers, one for each physical button." << L"\n";
+	c = 0;
+	//for_each(begin(cursor.buttonMap),end(cursor.buttonMap),[&](BYTE element)
+	//{
+	//	wout << cursor.indent << left << setw(cursor.w1) << c++ << right << setw(cursor.w2) << element
+	//		<< Indent(cursor.w3) << L"" << L"\n";
+	//}); // end for_each
+	wout << cursor.indent << left << setw(cursor.w1) << L"CSR_SYSBTNMAP" << right << setw(cursor.w2) << L""
+		<< Indent(cursor.w3) << L"Returns a 32 byte array of button action codes, one for each logical button." << L"\n";
+	//c = 0;
+	//for_each(begin(cursor.systemButtonMap),end(cursor.systemButtonMap),[&](BYTE element)
+	//{
+	//	wout << cursor.indent << left << setw(cursor.w1) << c++ << right << setw(cursor.w2) << toString(element)
+	//		<< Indent(cursor.w3) << L"" << L"\n";
+	//}); // end for_each
+
+	// normal pressure
+	wout << cursor.indent << left << setw(cursor.w1) << L"CSR_NPBUTTON" << right << setw(cursor.w2);
+	if(cursor.hasNPButton)
+		wout << cursor.npButton;
+	else
+		wout << L"not supported";
+	wout << Indent(cursor.w3) << L"Returns the physical button number of the button that is controlled by normal pressure." << L"\n";
+	wout << cursor.indent << left << setw(cursor.w1) << L"CSR_NPBTNMARKS" << right << setw(cursor.w2) << (cursor.hasNPMarks?L"":L"not supported")
+		<< Indent(cursor.w3) << L"Returns an array of two UINTs, specifying the button marks for the normal pressure button." << L"\n";
+	if(cursor.hasNPMarks)
+	{
+		wout << Indent(cursor.indent.size+4) << left << setw(cursor.w1-4) << L"release" << right << setw(cursor.w2) << cursor.npReleaseMark
+			<< Indent(cursor.w3) << L"The release mark." << L"\n";
+		wout << Indent(cursor.indent.size+4) << left << setw(cursor.w1-4) << L"press" << right << setw(cursor.w2) << cursor.npPressMark
+			<< Indent(cursor.w3) << L"The press mark." << L"\n";
+	} // end if
+	wout << cursor.indent << left << setw(cursor.w1) << L"CSR_NPRESPONSE" << right << setw(cursor.w2);
+	if(cursor.hasNPResponse)
+	{
+		wstringstream wsout;
+		wsout << cursor.npResponse.size() << L" UINTs";
+		wout << wsout.str();
+	}
+	else
+		wout << L"not supported";
+	wout << Indent(cursor.w3) << L"Returns an array of UINTs describing the pressure response curve for normal pressure." << L"\n";
+
+	// tangential pressure
+	wout << cursor.indent << left << setw(cursor.w1) << L"CSR_TPBUTTON" << right << setw(cursor.w2);
+	if(cursor.hasTPButton)
+		wout << cursor.tpButton;
+	else
+		wout << L"not supported";
+	wout << Indent(cursor.w3) << L"Returns the physical button number of the button that is controlled by tangential pressure." << L"\n";
+	wout << cursor.indent << left << setw(cursor.w1) << L"CSR_TPBTNMARKS" << right << setw(cursor.w2) << (cursor.hasTPMarks?L"":L"not supported")
+		<< Indent(cursor.w3) << L"Returns an array of two UINTs, specifying the button marks for the tangential pressure button." << L"\n";
+	if(cursor.hasTPMarks)
+	{
+		wout << Indent(cursor.indent.size+4) << left << setw(cursor.w1-4) << L"release" << right << setw(cursor.w2) << cursor.tpReleaseMark
+			<< Indent(cursor.w3) << L"The release mark." << L"\n";
+		wout << Indent(cursor.indent.size+4) << left << setw(cursor.w1-4) << L"press" << right << setw(cursor.w2) << cursor.tpPressMark
+			<< Indent(cursor.w3) << L"The press mark." << L"\n";
+	} // end if
+	wout << cursor.indent << left << setw(cursor.w1) << L"CSR_TPRESPONSE" << right << setw(cursor.w2);
+	if(cursor.hasTPResponse)
+	{
+		wstringstream wsout;
+		wsout << cursor.tpResponse.size() << L" UINTs";
+		wout << wsout.str();
+	}
+	else
+		wout << L"not supported";
+	wout << Indent(cursor.w3) << L"Returns an array of UINTs describing the pressure response curve for tangential pressure." << L"\n";
+
+	if(cursor.iVersion >= 0x0101)
+	{
+		wout << cursor.indent << left << setw(cursor.w1) << L"CSR_PHYSID" << right << setw(cursor.w2) << cursor.physicalID
+			<< Indent(cursor.w3) << L"Returns a manufacturer-specific physical identifier for the cursor. This value will distinguish the physical cursor from others on the same device. This physical identifier allows applications to bind functions to specific physical cursors, even if category numbers change and multiple, otherwise identical, physical cursors are present." << L"\n";
+		wout << cursor.indent << left << setw(cursor.w1) << L"CSR_MODE" << right << setw(cursor.w2);
+		if(cursor.capabilities&CRC_MULTIMODE)
+			wout << cursor.modeNumber;
+		else
+			wout << L"not supported";
+		wout << Indent(cursor.w3) << L"Returns the cursor mode number of this cursor type, if this cursor type has the CRC_MULTIMODE capability." << L"\n";
+		wout << cursor.indent << left << setw(cursor.w1) << L"CSR_MINPKTDATA" << right << setw(cursor.w2);
+		if(cursor.capabilities&CRC_AGGREGATE)
+			wout << cursor.minPacketData;
+		else
+			wout << L"not supported";
+		wout << Indent(cursor.w3) << L"Returns the minimum set of data available from a physical cursor in this cursor type, if this cursor type has the CRC_AGGREGATE capability." << L"\n";
+		wout << cursor.indent << left << setw(cursor.w1) << L"CSR_MINBUTTONS" << right << setw(cursor.w2);
+		if(cursor.capabilities&CRC_AGGREGATE)
+			wout << cursor.minButtons;
+		else
+			wout << L"not supported";
+		wout << Indent(cursor.w3) << L"Returns the minimum number of buttons of physical cursors in the cursor type, if this cursor type has the CRC_AGGREGATE capability." << L"\n";
+		wout << cursor.indent << left << setw(cursor.w1) << L"CSR_CAPABILITIES" << right << setw(cursor.w2) << bitset<32>(cursor.capabilities)
+			<< Indent(cursor.w3) << L"Returns flags indicating cursor capabilities, as defined below:" << L"\n";
+		wout << WTCCapability(cursor.capabilities,cursor.sIndent,cursor.sw1,cursor.sw2,cursor.sw3);
 	} // end if
 	wout << L"\n";
 	return wout;
