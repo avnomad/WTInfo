@@ -549,6 +549,7 @@ struct WTCursor	// this is not a class to export in a library! naming, members, 
 	bool hasTPResponse;
 	vector<UINT> tpResponse;
 	DWORD physicalID;
+	DWORD type;
 	UINT modeNumber;
 	UINT minPacketData;
 	UINT minButtons;
@@ -619,6 +620,10 @@ struct WTCursor	// this is not a class to export in a library! naming, members, 
 				WTInfoW(WTI_CURSORS+cursorIndex,CSR_MINBUTTONS,&minButtons);
 			} // end if
 		} // end if
+		if(iVersion >= 0x0102)
+		{
+			WTInfoW(WTI_CURSORS+cursorIndex,CSR_TYPE,&type);
+		} // end if
 	} // end WTCursor constructotr	
 }; // end struct WTCursor
 
@@ -673,6 +678,22 @@ wstring toString(BYTE actionCode)
 	case SBN_P3DRAG:	s += L" & SBN_P3DRAG"; break;
 	} // end switch		
 	return s;
+} // end function toString
+
+wstring typeToString(DWORD cursorType)
+{
+	wstringstream wsout;
+	switch(cursorType & 0x0f06)
+	{
+	case 0x0802: wsout << L"General Stylus"; break;
+	case 0x0902: wsout << L"Airbrush"; break;
+	case 0x0804: wsout << L"Art Pen"; break;
+	case 0x0004: wsout << L"4D Mouse"; break;
+	case 0x0006: wsout << L"5 button Puck"; break;
+	default: wsout << L"unknown"; break;
+	} // end switch
+	wsout << L":variation " << (cursorType>>4 & 0x000f);
+	return wsout.str();
 } // end function toString
 
 struct WTCCapability
@@ -799,6 +820,13 @@ std::wostream &operator<<(std::wostream &wout, const ExtWTCursor &cursor)
 		wout << L"not supported";
 	wout << Indent(cursor.w3) << L"Returns an array of UINTs describing the pressure response curve for tangential pressure." << L"\n";
 
+	if(cursor.iVersion >= 0x0102)
+	{
+		wout << cursor.indent << left << setw(cursor.w1) << L"CSR_TYPE" << right << setw(cursor.w2) << bitset<32>(cursor.type)
+			<< Indent(cursor.w3) << L"???." << L"\n";
+		wout << cursor.indent << left << setw(cursor.w1) << L"" << right << setw(cursor.w2) << typeToString(cursor.type)
+			<< Indent(cursor.w3) << L"" << L"\n";
+	} // end if
 	if(cursor.iVersion >= 0x0101)
 	{
 		wout << cursor.indent << left << setw(cursor.w1) << L"CSR_PHYSID" << right << setw(cursor.w2) << cursor.physicalID
