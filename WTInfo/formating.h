@@ -722,27 +722,27 @@ std::wostream &operator<<(std::wostream &wout, const ExtWTCursor &cursor)
 		<< Indent(cursor.w3) << L"Returns the number of bits of raw button data returned by the hardware." << L"\n";
 	wout << cursor.indent << left << setw(cursor.w1) << L"CSR_BTNNAMES" << right << setw(cursor.w2) << L""
 		<< Indent(cursor.w3) << L"Returns a list of zero-terminated strings containing the names of the cursor's buttons. The number of names in the list is the same as the number of buttons on the cursor." << L"\n";
-	//for_each(begin(cursor.buttonNames),end(cursor.buttonNames),[&](const wstring &s)
-	//{
-	//	wout << cursor.indent << left << setw(cursor.w1) << c++ << right << setw(cursor.w2) << s
-	//		<< Indent(cursor.w3) << L"" << L"\n";
-	//}); // end for_each
+	for_each(begin(cursor.buttonNames),end(cursor.buttonNames),[&](const wstring &s)
+	{
+		wout << cursor.indent << left << setw(cursor.w1) << c++ << right << setw(cursor.w2) << s
+			<< Indent(cursor.w3) << L"" << L"\n";
+	}); // end for_each
 	wout << cursor.indent << left << setw(cursor.w1) << L"CSR_BUTTONMAP" << right << setw(cursor.w2) << L""
 		<< Indent(cursor.w3) << L"Returns a 32 byte array of logical button numbers, one for each physical button." << L"\n";
 	c = 0;
-	//for_each(begin(cursor.buttonMap),end(cursor.buttonMap),[&](BYTE element)
-	//{
-	//	wout << cursor.indent << left << setw(cursor.w1) << c++ << right << setw(cursor.w2) << element
-	//		<< Indent(cursor.w3) << L"" << L"\n";
-	//}); // end for_each
+	for_each(begin(cursor.buttonMap),end(cursor.buttonMap),[&](BYTE element)
+	{
+		wout << cursor.indent << left << setw(cursor.w1) << c++ << right << setw(cursor.w2) << element
+			<< Indent(cursor.w3) << L"" << L"\n";
+	}); // end for_each
 	wout << cursor.indent << left << setw(cursor.w1) << L"CSR_SYSBTNMAP" << right << setw(cursor.w2) << L""
 		<< Indent(cursor.w3) << L"Returns a 32 byte array of button action codes, one for each logical button." << L"\n";
-	//c = 0;
-	//for_each(begin(cursor.systemButtonMap),end(cursor.systemButtonMap),[&](BYTE element)
-	//{
-	//	wout << cursor.indent << left << setw(cursor.w1) << c++ << right << setw(cursor.w2) << toString(element)
-	//		<< Indent(cursor.w3) << L"" << L"\n";
-	//}); // end for_each
+	c = 0;
+	for_each(begin(cursor.systemButtonMap),end(cursor.systemButtonMap),[&](BYTE element)
+	{
+		wout << cursor.indent << left << setw(cursor.w1) << c++ << right << setw(cursor.w2) << toString(element)
+			<< Indent(cursor.w3) << L"" << L"\n";
+	}); // end for_each
 
 	// normal pressure
 	wout << cursor.indent << left << setw(cursor.w1) << L"CSR_NPBUTTON" << right << setw(cursor.w2);
