@@ -702,6 +702,7 @@ std::wostream &operator<<(std::wostream &wout, const WTCCapability &capability)
 
 #include <algorithm>
 using std::for_each;
+using std::copy;
 using std::begin;
 using std::end;
 
@@ -824,6 +825,212 @@ std::wostream &operator<<(std::wostream &wout, const ExtWTCursor &cursor)
 			<< Indent(cursor.w3) << L"Returns flags indicating cursor capabilities, as defined below:" << L"\n";
 		wout << WTCCapability(cursor.capabilities,cursor.sIndent,cursor.sw1,cursor.sw2,cursor.sw3);
 	} // end if
+	wout << L"\n";
+	return wout;
+} // end function operator<<
+
+struct WTExtension	// this is not a class to export in a library! naming, members, types are lousy!
+{
+	wstring name;
+	UINT tag;
+	bool hasMask;
+	WTPKT mask;
+	bool hasSize;
+	UINT absoluteModeSize;
+	UINT relativeModeSize;
+	bool hasAxes;
+	vector<AXIS> axes;
+	bool hasGlobalDefaults;
+	vector<BYTE> globalDefaults;
+	bool hasDigitizingDefaults;
+	vector<BYTE> digitizingDefaults;
+	bool hasSystemDefaults;
+	vector<BYTE> systemDefaults;
+	vector<bool> hasCursorDefaults;
+	vector<vector<BYTE>> cursorDefaults;
+
+	WORD iVersion;
+
+	WTExtension(unsigned int extensionIndex,WORD version)
+	{
+		unique_ptr<char[]> buffer;
+		unsigned int buffer_size;
+		UINT sizes[2];
+		UINT nCursors;
+
+		WTInfoW(WTI_INTERFACE,IFC_NCURSORS,&nCursors);
+		iVersion = version;
+
+		buffer_size = WTInfoW(WTI_EXTENSIONS+extensionIndex,EXT_NAME,nullptr);
+		buffer = unique_ptr<char[]>(new char[buffer_size]);
+		WTInfoW(WTI_EXTENSIONS+extensionIndex,EXT_NAME,buffer.get());
+		name = (wchar_t*)buffer.get();
+
+		WTInfoW(WTI_EXTENSIONS+extensionIndex,EXT_TAG,&tag);
+		hasMask = WTInfoW(WTI_EXTENSIONS+extensionIndex,EXT_MASK,&mask);
+		hasSize = WTInfoW(WTI_EXTENSIONS+extensionIndex,EXT_SIZE,sizes);
+		absoluteModeSize = sizes[0];
+		relativeModeSize = sizes[1];
+		// EXT_AXES
+		hasAxes = buffer_size = WTInfoW(WTI_EXTENSIONS+extensionIndex,EXT_AXES,nullptr);
+		buffer = unique_ptr<char[]>(new char[buffer_size]);
+		WTInfoW(WTI_EXTENSIONS+extensionIndex,EXT_AXES,buffer.get());
+		axes.resize(buffer_size/sizeof(AXIS));
+		copy((AXIS*)buffer.get(),(AXIS*)(buffer.get()+buffer_size),axes.begin());
+		// EXT_DEFAULT
+		hasGlobalDefaults = buffer_size = WTInfoW(WTI_EXTENSIONS+extensionIndex,EXT_DEFAULT,nullptr);
+		buffer = unique_ptr<char[]>(new char[buffer_size]);
+		WTInfoW(WTI_EXTENSIONS+extensionIndex,EXT_DEFAULT,buffer.get());
+		globalDefaults.resize(buffer_size/sizeof(BYTE));
+		copy((BYTE*)buffer.get(),(BYTE*)(buffer.get()+buffer_size),globalDefaults.begin());
+		// EXT_DEFCONTEXT
+		hasDigitizingDefaults = buffer_size = WTInfoW(WTI_EXTENSIONS+extensionIndex,EXT_DEFCONTEXT,nullptr);
+		buffer = unique_ptr<char[]>(new char[buffer_size]);
+		WTInfoW(WTI_EXTENSIONS+extensionIndex,EXT_DEFCONTEXT,buffer.get());
+		digitizingDefaults.resize(buffer_size/sizeof(BYTE));
+		copy((BYTE*)buffer.get(),(BYTE*)(buffer.get()+buffer_size),digitizingDefaults.begin());
+		// DEFSYSCTX
+		hasSystemDefaults = buffer_size = WTInfoW(WTI_EXTENSIONS+extensionIndex,EXT_DEFSYSCTX,nullptr);
+		buffer = unique_ptr<char[]>(new char[buffer_size]);
+		WTInfoW(WTI_EXTENSIONS+extensionIndex,EXT_DEFSYSCTX,buffer.get());
+		systemDefaults.resize(buffer_size/sizeof(BYTE));
+		copy((BYTE*)buffer.get(),(BYTE*)(buffer.get()+buffer_size),systemDefaults.begin());
+
+		hasCursorDefaults.resize(nCursors);
+		cursorDefaults.resize(nCursors);
+		for(UINT c = 0 ; c < nCursors ; ++c)
+		{
+			hasCursorDefaults[c] = buffer_size = WTInfoW(WTI_EXTENSIONS+extensionIndex,EXT_CURSORS+c,nullptr);
+			buffer = unique_ptr<char[]>(new char[buffer_size]);
+			WTInfoW(WTI_EXTENSIONS+extensionIndex,EXT_CURSORS+c,buffer.get());
+			cursorDefaults[c].resize(buffer_size/sizeof(BYTE));
+			copy((BYTE*)buffer.get(),(BYTE*)(buffer.get()+buffer_size),cursorDefaults[c].begin());
+		} // end for
+	} // end WTExtension constructotr
+}; // end struct WTExtension
+
+struct ExtWTExtension : public WTExtension	// extra information for printing
+{
+	Indent indent;
+	Indent sIndent;
+	UINT w1;
+	UINT w2;
+	UINT w3;
+	UINT sw1;
+	UINT sw2;
+	UINT sw3;
+
+	ExtWTExtension(unsigned int deviceIndex,WORD version,Indent indentation,UINT cw1,UINT cw2,UINT cw3,Indent subIndent,UINT scw1,UINT scw2,UINT scw3)
+		:WTExtension(deviceIndex,version),indent(indentation),w1(cw1),w2(cw2),w3(cw3),sIndent(subIndent),sw1(scw1),sw2(scw2),sw3(scw3){}
+}; // end struct ExtWTExtension
+
+wstring toString(UINT extensionTag)
+{
+	wstringstream wsout;
+	switch(extensionTag)
+	{
+	case WTX_OBT: wsout << L"WTX_OBT"; break;
+	case WTX_FKEYS: wsout << L"WTX_FKEYS"; break;
+	case WTX_TILT: wsout << L"WTX_TILT"; break;
+	case WTX_CSRMASK: wsout << L"WTX_CSRMASK"; break;
+	case WTX_XBTNMASK: wsout << L"WTX_XBTNMASK"; break;
+	case WTX_EXPKEYS: wsout << L"WTX_EXPKEYS"; break;
+	case WTX_TOUCHSTRIP: wsout << L"WTX_TOUCHSTRIP"; break;
+	case WTX_TOUCHRING: wsout << L"WTX_TOUCHRING"; break;
+	case WTX_EXPKEYS2: wsout << L"WTX_EXPKEYS2"; break;
+	} // end switch
+	wsout << L" (" << extensionTag << L")";
+	return wsout.str();
+} // end function toString
+
+std::wostream &operator<<(std::wostream &wout, const ExtWTExtension &extension)
+{
+	UINT c = 0;
+
+	wout << extension.indent << left << setw(extension.w1) << L"Index" << right << setw(extension.w2) << L"Value" << L"\n";
+	wout << extension.indent << left << setw(extension.w1) << L"EXT_NAME" << right << setw(extension.w2) << extension.name
+		<< Indent(extension.w3) << L"Returns a unique, null-terminated string describing the extension." << L"\n";
+	wout << extension.indent << left << setw(extension.w1) << L"EXT_TAG" << right << setw(extension.w2) << toString(extension.tag)
+		<< Indent(extension.w3) << L"Returns a unique identifier for the extension." << L"\n";
+	wout << extension.indent << left << setw(extension.w1) << L"EXT_MASK" << right << setw(extension.w2);
+	if(extension.hasMask)
+		wout << bitset<32>(extension.mask);
+	else
+		wout << L"not supported";
+	wout << Indent(extension.w3) << L"Returns a mask that can be bitwise OR'ed with WTPKT-type variables to select the extension." << L"\n";
+	wout << extension.indent << left << setw(extension.w1) << L"EXT_SIZE" << right << setw(extension.w2) << (extension.hasSize?L"":L"not supported")
+		<< Indent(extension.w3) << L"Returns an array of two UINTs specifying the extension's size within a packet (in bytes). The first is for absolute mode; the second is for relative mode." << L"\n";
+	if(extension.hasSize)
+	{
+		wout << Indent(extension.indent.size+4) << left << setw(extension.w1-4) << L"absolute" << right << setw(extension.w2) << extension.absoluteModeSize
+			<< Indent(extension.w3) << L"The absolute mode size." << L"\n";
+		wout << Indent(extension.indent.size+4) << left << setw(extension.w1-4) << L"relative" << right << setw(extension.w2) << extension.relativeModeSize
+			<< Indent(extension.w3) << L"The relative mode size." << L"\n";
+	} // end if
+	wout << extension.indent << left << setw(extension.w1) << L"EXT_AXES" << right << setw(extension.w2);
+	if(extension.hasAxes)
+	{
+		wstringstream wsout;
+		wsout << extension.axes.size() << L" axes";
+		wout << wsout.str();
+	}
+	else
+		wout << L"not supported";
+	wout << Indent(extension.w3) << L"Returns an array of axis descriptions, as needed for the extension." << L"\n";
+	for_each(begin(extension.axes),end(extension.axes),[&](const AXIS &axis)
+	{
+		wstringstream wsout;
+		wsout << L"axis " << c++;
+		wout << Indent(extension.indent.size+4) << left << setw(extension.w1-4) << wsout.str() << right << setw(extension.w2) << axis
+			<< Indent(extension.w3) << L"" << L"\n";
+	}); // end for_each
+	wout << extension.indent << left << setw(extension.w1) << L"EXT_DEFAULT" << right << setw(extension.w2);
+	if(extension.hasGlobalDefaults)
+	{
+		wstringstream wsout;
+		wsout << extension.globalDefaults.size() << L" bytes";
+		wout << wsout.str();
+	}
+	else
+		wout << L"not supported";
+	wout << Indent(extension.w3) << L"Returns the current global default data, as needed for the extension. This data is modified via the WTMgrExt function." << L"\n";
+	wout << extension.indent << left << setw(extension.w1) << L"EXT_DEFCONTEXT" << right << setw(extension.w2);
+	if(extension.hasDigitizingDefaults)
+	{
+		wstringstream wsout;
+		wsout << extension.digitizingDefaults.size() << L" bytes";
+		wout << wsout.str();
+	}
+	else
+		wout << L"not supported";
+	wout << Indent(extension.w3) << L"Returns the current default context-specific data, as needed for the extension. The index identifies the digitizing-context defaults." << L"\n";
+	wout << extension.indent << left << setw(extension.w1) << L"EXT_DEFSYSCTX" << right << setw(extension.w2);
+	if(extension.hasSystemDefaults)
+	{
+		wstringstream wsout;
+		wsout << extension.systemDefaults.size() << L" bytes";
+		wout << wsout.str();
+	}
+	else
+		wout << L"not supported";
+	wout << Indent(extension.w3) << L"Returns the current default context-specific data, as needed for the extension. The index identifies the system-context defaults." << L"\n";
+	wout << extension.indent << left << setw(extension.w1) << L"EXT_CURSORS" << right << setw(extension.w2) << L""
+		<< Indent(extension.w3) << L"Is the first of one or more consecutive indices, one per cursor type. Each returns the current default cursor-specific data, as need for the extension. This data is modified via the WTMgrCsrExt function." << L"\n";
+	for(size_t c = 0 ; c < extension.cursorDefaults.size() ; ++c)
+	{
+		wstringstream wsout;
+		wsout << L"cursor " << c;
+		wout << Indent(extension.indent.size+4) << left << setw(extension.w1-4) << wsout.str() << right << setw(extension.w2);
+		if(extension.hasCursorDefaults[c])
+		{
+			wstringstream wsout;
+			wsout << extension.cursorDefaults[c].size() << L" bytes";
+			wout << wsout.str();
+		}
+		else
+			wout << L"not supported";
+		wout << Indent(extension.w3) << L"" << L"\n";
+	} // end for
 	wout << L"\n";
 	return wout;
 } // end function operator<<

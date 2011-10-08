@@ -178,56 +178,65 @@ int main()
 	--indent;
 	wcout << indent << left << setw(c1) << L"WTI_DEFCONTEXT" << L"Contains the current default digitizing logical context." << L"\n";
 	++indent;
-	ExtLogContext context(indent,cw1,cw2,cw3,specVersion,sIndent,scw1,scw2,scw3);
-	WTInfoW(WTI_DEFCONTEXT,0,&context);
-	wcout << context;
+	//ExtLogContext context(indent,cw1,cw2,cw3,specVersion,sIndent,scw1,scw2,scw3);
+	//WTInfoW(WTI_DEFCONTEXT,0,&context);
+	//wcout << context;
 	--indent;
 	wcout << indent << left << setw(c1) << L"WTI_DEFSYSCTX" << L"Contains the current default system logical context." << L"\n";
 	++indent;
-	WTInfoW(WTI_DEFSYSCTX,0,&context);
-	wcout << context;
+	//WTInfoW(WTI_DEFSYSCTX,0,&context);
+	//wcout << context;
 	--indent;
 	UINT sw1=9,sw2=3,sc3=2;
 	wcout << indent << left << setw(c1) << L"WTI_DEVICES" << L"Each contains capability and status information for a device." << L"\n";
 	++indent;
-	for(UINT c = 0 ; c < nDevices ; ++c)
-	{
-		wcout << indent << left << setw(sw1) << L"device" << right << setw(sw2) << c << L"\n";
-		++indent;
-		wcout << ExtWTDevice(c,specVersion,indent,cw1-4,cw2,cw3,sIndent,scw1,scw2,scw3);
-		--indent;
-	} // end for
+	//for(UINT c = 0 ; c < nDevices ; ++c)
+	//{
+	//	wcout << indent << left << setw(sw1) << L"device" << right << setw(sw2) << c << L"\n";
+	//	++indent;
+	//	wcout << ExtWTDevice(c,specVersion,indent,cw1-4,cw2,cw3,sIndent,scw1,scw2,scw3);
+	//	--indent;
+	//} // end for
 	--indent;
 	wcout << indent << left << setw(c1) << L"WTI_CURSORS" << L"Each contains capability and status information for a cursor type." << L"\n";
 	++indent;
-	for(UINT c = 0 ; c < nCursors ; ++c)
+	//for(UINT c = 0 ; c < nCursors ; ++c)
+	//{
+	//	wcout << indent << left << setw(sw1) << L"cursor" << right << setw(sw2) << c << L"\n";
+	//	++indent;
+	//	wcout << ExtWTCursor(c,specVersion,indent,cw1-4,cw2,cw3,sIndent,scw1,scw2,scw3);
+	//	--indent;
+	//} // end for
+	--indent;
+	wcout << indent << left << setw(c1) << L"WTI_EXTENSIONS" << L"Each contains descriptive information and defaults for an extension." << L"\n";
+	++indent;
+	for(UINT c = 0 ; c < nExtensions ; ++c)
 	{
-		wcout << indent << left << setw(sw1) << L"cursor" << right << setw(sw2) << c << L"\n";
+		wcout << indent << left << setw(sw1) << L"extension" << right << setw(sw2) << c << L"\n";
 		++indent;
-		wcout << ExtWTCursor(c,specVersion,indent,cw1-4,cw2,cw3,sIndent,scw1,scw2,scw3);
+		wcout << ExtWTExtension(c,specVersion,indent,cw1-4,cw2,cw3,sIndent,scw1,scw2,scw3);
 		--indent;
 	} // end for
 	--indent;
-	wcout << indent << left << setw(c1) << L"WTI_EXTENSIONS" << L"Each contains descriptive information and defaults for an extension." << L"\n";
 	wcout << indent << left << setw(c1) << L"WTI_DDCTXS" << L"Each contains the current default digitizing logical context for the corresponding device." << L"\n";
 	++indent;
-	++context.indent;
-	context.w1 -= 4;
-	for(UINT c = 0 ; c < nDevices ; ++c)
-	{
-		wcout << indent << left << setw(sw1) << L"device" << right << setw(sw2) << c << L"\n";
-		WTInfoW(WTI_DDCTXS+c,0,&context);
-		wcout << context;
-	} // end for
+	//++context.indent;
+	//context.w1 -= 4;
+	//for(UINT c = 0 ; c < nDevices ; ++c)
+	//{
+	//	wcout << indent << left << setw(sw1) << L"device" << right << setw(sw2) << c << L"\n";
+	//	WTInfoW(WTI_DDCTXS+c,0,&context);
+	//	wcout << context;
+	//} // end for
 	--indent;
 	wcout << indent << left << setw(c1) << L"WTI_DSCTXS" << L"Each contains the current default system logical context for the corresponding device." << L"\n";
 	++indent;
-	for(UINT c = 0 ; c < nDevices ; ++c)
-	{
-		wcout << indent << left << setw(sw1) << L"device" << right << setw(sw2) << c << L"\n";
-		WTInfoW(WTI_DSCTXS+c,0,&context);
-		wcout << context;
-	} // end for
+	//for(UINT c = 0 ; c < nDevices ; ++c)
+	//{
+	//	wcout << indent << left << setw(sw1) << L"device" << right << setw(sw2) << c << L"\n";
+	//	WTInfoW(WTI_DSCTXS+c,0,&context);
+	//	wcout << context;
+	//} // end for
 	--indent;
 
 	wcout << L"\n\n\n";
