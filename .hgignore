@@ -1,6 +1,7 @@
 syntax: regexp
 Debug/*
 ipch/*
+Release/*
 syntax: glob
 WTInfo.sdf
 WTInfo.opensdf

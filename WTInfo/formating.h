@@ -26,29 +26,6 @@ std::wostream &operator<<(std::wostream &wout, const Indent &indent)
 	return wout;
 } // end function operator<<
 
-//std::wostream &operator << (std::wostream &wout,const AXIS &axis)
-//{
-//	wout << L"range: " << axis.axMin << L" - " << axis.axMax << endl;
-//	wout << std::fixed << L"resolution: " << (axis.axResolution >> 16) + (axis.axResolution & 0xffff)/(float)0x10000;
-//	switch(axis.axUnits)
-//	{
-//	case TU_NONE:
-//		wout << L"no unit";
-//		break;
-//	case TU_INCHES:
-//		wout << L" per inch";
-//		break;
-//	case TU_CENTIMETERS:
-//		wout << L" per cm";
-//		break;
-//	case TU_CIRCLE:
-//		wout << L" per circle";
-//		break;
-//	} // end switch
-//	wout << endl;
-//	return wout;
-//} // end function operator <<
-
 struct WTVersion
 {
 	WTVersion(WORD version)

@@ -61,7 +61,7 @@ int main()
 
 	// load WinTab
 	if(wintabModule = LoadLibraryW(L"WinTab32.dll"))
-		wcout << L"Module loaded succesfully.\n";
+		wcout << L"Module loaded successfully.\n";
 	else
 		wcout << Error(L"Could not load module: ") << endl;
 
@@ -243,7 +243,7 @@ int main()
 
 	// unload WinTab
 	if(FreeLibrary(wintabModule))
-		wcout << L"Module unloaded succesfully.\n";
+		wcout << L"Module unloaded successfully.\n";
 	else
 		wcout << Error(L"Could not unload module: ") << endl;
 
