@@ -5,3 +5,4 @@ Release/*
 syntax: glob
 WTInfo.sdf
 WTInfo.opensdf
+WTInfo.suo

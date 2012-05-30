@@ -167,9 +167,9 @@ int main()
 	wcout << indent << left << setw(cw1) << L"Index" << right << setw(cw2) << L"Value" << Indent(cw3) << L"Description" << L"\n\n";
 	wcout << indent << left << setw(cw1) << L"STA_CONTEXTS" << right << setw(cw2) << curContexts << Indent(cw3) << L"Returns the number of contexts currently open." << L"\n";
 	wcout << indent << left << setw(cw1) << L"STA_SYSCTXS" << right << setw(cw2) << curSysContexts << Indent(cw3) << L"Returns the number of system contexts currently open." << L"\n";
-	wcout << indent << left << setw(cw1) << L"STA_PKTRATE" << right << setw(cw2) << curPktRate << Indent(cw3) << L"Returns the maximum packet report rate currently being re­ceived by any context, in Hertz." << L"\n";
+	wcout << indent << left << setw(cw1) << L"STA_PKTRATE" << right << setw(cw2) << curPktRate << Indent(cw3) << L"Returns the maximum packet report rate currently being received by any context, in Hertz." << L"\n";
 	WTInfoW(WTI_STATUS,STA_PKTDATA,&dataMask);
-	wcout << indent << left << setw(cw1) << L"STA_PKTDATA" << right << setw(cw2) << bitset<32>(dataMask) << Indent(cw3) << L"Returns a mask indicating which packet data items are re­quested by at least one context." << L"\n";
+	wcout << indent << left << setw(cw1) << L"STA_PKTDATA" << right << setw(cw2) << bitset<32>(dataMask) << Indent(cw3) << L"Returns a mask indicating which packet data items are requested by at least one context." << L"\n";
 	wcout << WTDataMask(dataMask,sIndent,scw1,scw2,scw3,specVersion);
 	wcout << indent << left << setw(cw1) << L"STA_MANAGERS" << right << setw(cw2) << curManagers << Indent(cw3) << L"Returns the number of manager handles currently open." << L"\n";
 	wcout << indent << left << setw(cw1) << L"STA_SYSTEM" << right << setw(cw2) << globSysPointing << Indent(cw3) << L"Returns a non-zero value if system pointing is available to the whole screen; zero otherwise." << L"\n";
