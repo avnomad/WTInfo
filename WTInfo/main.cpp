@@ -1,4 +1,4 @@
-#include <iostream>
+ï»¿#include <iostream>
 using std::wcout;
 using std::wcin;
 using std::wcerr;
@@ -174,7 +174,7 @@ int main()
 	wcout << indent << left << setw(cw1) << L"STA_MANAGERS" << right << setw(cw2) << curManagers << Indent(cw3) << L"Returns the number of manager handles currently open." << L"\n";
 	wcout << indent << left << setw(cw1) << L"STA_SYSTEM" << right << setw(cw2) << globSysPointing << Indent(cw3) << L"Returns a non-zero value if system pointing is available to the whole screen; zero otherwise." << L"\n";
 	wcout << indent << left << setw(cw1) << L"STA_BUTTONUSE" << right << setw(cw2) << bitset<32>(buttonUse) << Indent(cw3) << L"Returns a button mask indicating the logical buttons whose events are requested by at least one context." << L"\n";
-	wcout << indent << left << setw(cw1) << L"STA_SYSBTNUSE" << right << setw(cw2) << bitset<32>(sysBtnUse) << Indent(cw3) << L"Returns a button mask indicating which logical buttons are as­signed a system button function by the current cursor's system button map." << L"\n";
+	wcout << indent << left << setw(cw1) << L"STA_SYSBTNUSE" << right << setw(cw2) << bitset<32>(sysBtnUse) << Indent(cw3) << L"Returns a button mask indicating which logical buttons are assigned a system button function by the current cursor's system button map." << L"\n";
 	--indent;
 	wcout << indent << left << setw(c1) << L"WTI_DEFCONTEXT" << L"Contains the current default digitizing logical context." << L"\n";
 	++indent;

@@ -1,4 +1,4 @@
-struct Error	// what about &&?
+﻿struct Error	// what about &&?
 {
 	Error(const wstring & msg)
 		:message(msg){}

@@ -1,4 +1,4 @@
-struct Indent
+ï»¿struct Indent
 {
 	Indent(unsigned int initial_size)
 		:size(initial_size){}
@@ -69,7 +69,7 @@ std::wostream &operator<<(std::wostream &wout, const WTCOptions &options)
 	wout << options.indent << left << setw(options.w1) << L"CXO_MESSAGES" << right << setw(options.w2) << bool(CXO_MESSAGES&options.o)
 		<< Indent(options.w3) << L"Specifies that the context returns WT_PACKET messages to its owner." << L"\n";
 	wout << options.indent << left << setw(options.w1) << L"CXO_MARGIN" << right << setw(options.w2) << bool(CXO_MARGIN&options.o)
-		<< Indent(options.w3) << L"Specifies that the input context on the tablet will have a margin. The margin is an area outside the specified input area where events will be mapped to the edge of the input area. This feature makes it easier to in­put points at the edge of the context." << L"\n";
+		<< Indent(options.w3) << L"Specifies that the input context on the tablet will have a margin. The margin is an area outside the specified input area where events will be mapped to the edge of the input area. This feature makes it easier to input points at the edge of the context." << L"\n";
 	wout << options.indent << left << setw(options.w1) << L"CXO_MGNINSIDE" << right << setw(options.w2) << bool(CXO_MGNINSIDE&options.o)
 		<< Indent(options.w3) << L"If the CXO_MARGIN bit is on, specifies that the margin will be inside the specified context. Thus, scaling will occur from a context slightly smaller than the specified input context to the output coordinate space." << L"\n";
 	wout << options.indent << left << setw(options.w1) << L"CXO_CSRMESSAGES" << right << setw(options.w2) << bool(CXO_CSRMESSAGES&options.o)
@@ -150,7 +150,7 @@ std::wostream &operator<<(std::wostream &wout, const WTCLocks &locks)
 	wout << locks.indent << left << setw(locks.w1) << L"CXL_SENSITIVITY" << right << setw(locks.w2) << bool(CXL_SENSITIVITY&locks.l)
 		<< Indent(locks.w3) << L"Specifies that the context's sensitivity settings for x, y, and z cannot be changed." << L"\n";
 	wout << locks.indent << left << setw(locks.w1) << L"CXL_SYSOUT" << right << setw(locks.w2) << bool(CXL_SYSOUT&locks.l)
-		<< Indent(locks.w3) << L"If the context is a system cursor context, the value specifies that the sys­tem pointing control variables of the context cannot be changed." << L"\n";
+		<< Indent(locks.w3) << L"If the context is a system cursor context, the value specifies that the system pointing control variables of the context cannot be changed." << L"\n";
 	wout << L"\n";
 	return wout;
 } // end function operator<<
@@ -173,7 +173,7 @@ std::wostream &operator<<(std::wostream &wout, const WTCStatus &status)
 	wout << status.indent << left << setw(status.w1) << L"CXS_DISABLED" << right << setw(status.w2) << bool(CXS_DISABLED&status.s)
 		<< Indent(status.w3) << L"Specifies that the context has been disabled using the WTEnable function." << L"\n";
 	wout << status.indent << left << setw(status.w1) << L"CXS_OBSCURED" << right << setw(status.w2) << bool(CXS_OBSCURED&status.s)
-		<< Indent(status.w3) << L"Specifies that the context is at least partially obscured by an overlapping con­text that is higher in the context overlap order." << L"\n";
+		<< Indent(status.w3) << L"Specifies that the context is at least partially obscured by an overlapping context that is higher in the context overlap order." << L"\n";
 	wout << status.indent << left << setw(status.w1) << L"CXS_ONTOP" << right << setw(status.w2) << bool(CXS_ONTOP&status.s)
 		<< Indent(status.w3) << L"Specifies that the context is the topmost context in the context overlap order." << L"\n";
 	wout << L"\n";
@@ -474,7 +474,7 @@ std::wostream &operator<<(std::wostream &wout, const ExtWTDevice &device)
 	wout << Indent(device.indent.size+4) << left << setw(device.w1-4) << L"azimuth" << right << setw(device.w2) << device.azimuth
 		<< Indent(device.w3) << L"Specifies the clockwise rotation of the cursor about the z axis through a full circular range." << L"\n";
 	wout << Indent(device.indent.size+4) << left << setw(device.w1-4) << L"altitude" << right << setw(device.w2) << device.altitude
-		<< Indent(device.w3) << L"Specifies the angle with the x-y plane through a signed, semicir­cular range.  Positive values specify an angle upward toward the positive z axis; negative values specify an angle downward toward the negative z axis." << L"\n";
+		<< Indent(device.w3) << L"Specifies the angle with the x-y plane through a signed, semicircular range.  Positive values specify an angle upward toward the positive z axis; negative values specify an angle downward toward the negative z axis." << L"\n";
 	wout << Indent(device.indent.size+4) << left << setw(device.w1-4) << L"twist" << right << setw(device.w2) << device.twist
 		<< Indent(device.w3) << L"Specifies the clockwise rotation of the cursor about its own major axis." << L"\n";
 	if(device.iVersion >= 0x0101)
@@ -689,7 +689,7 @@ std::wostream &operator<<(std::wostream &wout, const WTCCapability &capability)
 {
 	wout << capability.indent << left << setw(capability.w1) << L"Capability" << right << setw(capability.w2) << L"Value" << L"\n";
 	wout << capability.indent << left << setw(capability.w1) << L"CRC_MULTIMODE" << right << setw(capability.w2) << bool(CRC_MULTIMODE&capability.c)
-		<< Indent(capability.w3) << L"Indicates this cursor type describes one of several modes of a single physical cursor. Consecutive cursor type categories de­scribe the modes; the CSR_MODE data item gives the mode number of each cursor type." << L"\n";
+		<< Indent(capability.w3) << L"Indicates this cursor type describes one of several modes of a single physical cursor. Consecutive cursor type categories describe the modes; the CSR_MODE data item gives the mode number of each cursor type." << L"\n";
 	wout << capability.indent << left << setw(capability.w1) << L"CRC_AGGREGATE" << right << setw(capability.w2) << bool(CRC_AGGREGATE&capability.c)
 		<< Indent(capability.w3) << L"Indicates this cursor type describes several physical cursors that cannot be distinguished by software." << L"\n";
 	wout << capability.indent << left << setw(capability.w1) << L"CRC_INVERT" << right << setw(capability.w2) << bool(CRC_INVERT&capability.c)
